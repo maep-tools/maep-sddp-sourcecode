@@ -4,6 +4,9 @@
 
 ### Model
 
+### Documentation
+If you want to study the model please access to this pdf:
+https://github.com/maep-tools/model-maep/
 
 
 ### License
