@@ -3,6 +3,7 @@
 </p>
 
 ### Model
+Planning of the operation of hydrothermal systems.
 
 ### Documentation
 If you want to study the model please access to this pdf:
