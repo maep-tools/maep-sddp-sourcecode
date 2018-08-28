@@ -1,5 +1,5 @@
 <p align="center">
-    <img width="460" height="300" src="https://maep-tools.github.io/landing-page/assets/img/theme/Vector.svg">
+    <img width="460" height="300" src="https://maep-tools.github.io/interface-landingpage/assets/img/theme/Vector.svg">
 </p>
 
 ### Model
@@ -7,7 +7,7 @@ Operation planning model to the operation of hydro-thermal power systems.
 
 ### Documentation
 Please access to this pdf:
-https://github.com/maep-tools/model-maep/
+https://github.com/maep-tools/
 
 
 ### License
