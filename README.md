@@ -3,10 +3,10 @@
 </p>
 
 ### Model
-Planning of the operation of hydrothermal systems.
+Operation planning model to the operation of hydro-thermal power systems.
 
 ### Documentation
-If you want to study the model please access to this pdf:
+Please access to this pdf:
 https://github.com/maep-tools/model-maep/
 
 
