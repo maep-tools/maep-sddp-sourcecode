@@ -61,7 +61,7 @@ def saveiter(k,s,lenblk,thermalPlants,instance,modelprodT,genThermal,modelprodH,
             for j in lenblk:
                 linTransfer[k][s][org-1][dest-1].append(linobject[i+1, j+1].value)
 
-    if Param.emissions is True:
+    if Param.emss_curve is True:
         # save emissions curve
         for j in lenblk:
             aux1 = 0; aux2 = 0; aux3 = 0

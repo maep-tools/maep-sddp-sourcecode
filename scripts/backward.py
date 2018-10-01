@@ -376,7 +376,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
                     sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
                     sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
                     sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
-                    model.balance[area,b] + model.deficit[area, b] == model.demand[area, b])
+                    model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
         # add constraint to model according to indices
         model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
 
@@ -405,7 +405,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
                     sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
                     sum(model.line[l, b] for l in model.linesAreaOut[area])-
                     sum(model.line[l, b] for l in model.linesAreaIn[area]) +
-                    model.deficit[area, b] == model.demand[area, b])
+                    model.deficit[area, b] >= model.demand[area, b])
         # add constraint to model according to indices
         model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
     
