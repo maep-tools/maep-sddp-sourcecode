@@ -1,25 +1,21 @@
 
 import pickle
 
-def data(file):
+def data(Param, file):
     
     # Reading system information
     from scripts.readData import data_file
     print('Reading data...')
-    data_file('datasystem/{}.xlsx'.format(file))
+    data_file(Param, 'datasystem/{}.xlsx'.format(file))
     # delete temporal files
 
 def data_consistency(Param):
     
-    from utils.paramvalidation import paramlimits
-    
-    # Load the dictionary back from the pickle file
-    dict_data = pickle.load(open("savedata/data_save.p", "rb"))
-    # No of maximum number of stages
-    noStages = len(dict_data['horizon'])
+    from utils.paramvalidation import paramlimits, valmodel
     
     # validating input parameters
-    paramlimits(Param, noStages)
+    paramlimits(Param)
+    valmodel(Param)
 
 def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
     
@@ -37,10 +33,30 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
         from utils.input_hydro import inputhydro
         inputhydro(dict_data)
     
-        from utils.input_wind import inputwindSet, inputInflowWind
-        inputwindSet(dict_data, Param.stages, 1, 0)
-        inputInflowWind(dict_data, Param.stages, Param.eps_area, Param.eps_all)
-    
+        from utils.input_wind import inputwindSet
+        inputwindSet(dict_data, Param)
+        
+        if Param.wind_model2 is True:
+
+            from utils.input_wind import energyRealWind
+            energyRealWind(dict_data,Param.seriesBack,Param.stages)
+
+        elif Param.wind_freeD is True:
+            
+            from utils.input_wind_free import inputFreeWind
+            #from utils.input_solar_free import inputFreeSolarD, inputFreeSolarB
+            from utils.residualload import aggr_energy
+            print('p-Efficient Points calculation ...')
+            inputFreeWind(dict_data, Param)
+            #inputFreeSolarD(dict_data, Param)
+            #inputFreeSolarB(dict_data, Param)
+            aggr_energy(dict_data, Param)
+            
+        else:
+            
+            from utils.input_wind import inputInflowWind
+            inputInflowWind(dict_data, Param.stages, Param.eps_area, Param.eps_all)
+        
         from utils.input_others import inputbatteries, inputlines
         inputbatteries(dict_data, Param.stages)
         inputlines(dict_data, Param.stages)
@@ -158,9 +174,9 @@ def optimization(Param):
                     printresults(Param, sol_scn)
             
             # partial results
-            # print(sum(sol_costs[2])/seriesForw)
-            # print([max(sol_costs[2]),min(sol_costs[2]),numpy.std(sol_costs[2])])
-            # print(sol_costs[2])
+            print(sum(sol_costs[2])/Param.seriesForw)
+            #print([max(sol_costs[2]),min(sol_costs[2]),numpy.std(sol_costs[2])])
+            #print(sol_costs[2])
     
     elif Param.policy is False and Param.simulation is True:
     

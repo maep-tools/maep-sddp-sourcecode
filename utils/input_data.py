@@ -54,8 +54,8 @@ def inputdata(dictionary,sensDem):
         year = horizon[i].year; month = horizon[i].month
         days = calendar.monthrange(year,month); 
         aux = days[1]*24
-        if days[1] == 29:
-            aux = 28*24
+        # if days[1] == 29: # standard
+        #    aux = 28*24
         yearvector.append(aux)
         # Demand
         for k in range (numAreas):        

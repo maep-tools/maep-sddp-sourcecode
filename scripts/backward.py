@@ -294,7 +294,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     if Param.param_opf is True:
         dict_intensity = pickle.load(open("savedata/matrixbeta_save.p", "rb"))
         
-        # generation chains: set of spill and turbining arcs
+        # 
         setData = pyomoset(dict_intensity['matrixLineBus'][0])
         model.linebus = pyomo.Set(initialize= setData, dimen=2)
         
@@ -390,9 +390,8 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
         
         # define opf constraints
         def ctOpf(model, ct, b):
-            return( sum(model.balance[area,b] *  
-                    model.flines[ct, area] for area in model.Areas if (ct, area) in model.linebus) <= 
-                    model.line[ct, b])
+            return( -model.lineLimit[ct,b] <= sum(model.balance[area,b] *  
+                    model.flines[ct, area] for area in model.Areas if (ct, area) in model.linebus) <= model.lineLimit[ct,b] )
         # add constraint to model according to indices
         model.ctOpf = pyomo.Constraint(model.Circuits, model.Blocks, rule=ctOpf)
         

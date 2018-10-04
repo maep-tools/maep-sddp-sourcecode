@@ -1,9 +1,21 @@
 
 import pickle
     
-def inputwindSet(dict_data,stages,model1,model2):
+def inputwindSet(dict_data,Param):
     
-    if model1 == 1:
+    from utils.input_wind import inputwind
+    
+    if Param.wind_model2 is True:
+            
+        windRPlants = dict_data['windRPlants']
+        windRData = dict_data['windRData']
+        inflowRealData = dict_data['inflowRealData']
+        indcStage = 11; indcArea = 12
+        
+        inputwind(indcStage,indcArea,windRPlants,windRData,[[]],inflowRealData,dict_data,
+                  Param,1)
+        
+    else:
             
         windPlants = dict_data['windPlants']
         windData = dict_data['windData']
@@ -11,20 +23,9 @@ def inputwindSet(dict_data,stages,model1,model2):
         inflowWindData = dict_data['inflowWindData']
         indcStage = 6; indcArea = 8
         
-        from utils.input_wind import inputwind
         inputwind(indcStage,indcArea,windPlants,windData,expWindData,inflowWindData,
-                  dict_data,stages,0)
-    
-    if model2 == 1:
-            
-        windRPlants = dict_data['windRPlants']
-        windRData = dict_data['windRData']
-        inflowRealData = dict_data['inflowRealData']
-        indcStage = 11; indcArea = 12
-        
-        from utils.input_wind import inputwind
-        inputwind(indcStage,indcArea,windRPlants,windRData,[[]],inflowRealData,dict_data,stages,1)
-
+                  dict_data,Param.stages,0)
+ 
 ###############################################################################
         
 def inputwind(indcStage,indcArea,windPlants,windData,expWindData,inflowWindData,
@@ -119,7 +120,9 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
     
     power_area = [] # pmax = [0]*numAreas
     RnwArea = []
-    
+    for col in range(len(indicesData)):
+        indicesData[col].pop(0)
+        
     for area in range(numAreas):
         
         # Set of plants for each area

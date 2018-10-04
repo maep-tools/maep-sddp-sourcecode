@@ -66,8 +66,8 @@ def ybus(stages):
     stage_beta = []
     stage_linebus = []
     for i in range(stages):
-            stage_beta.append(beta)
-            stage_linebus.append(lineBus)
+        stage_beta.append(beta)
+        stage_linebus.append(lineBus)
             
     if len(expLines) > 0:
         for i in range(len(expLines)):

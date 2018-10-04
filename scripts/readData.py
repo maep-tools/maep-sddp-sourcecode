@@ -1,4 +1,98 @@
-def data_file(file):
+from utils.readxlxs import xlxstocsv
+import csv
+import datetime
+
+###############################################################################
+   
+def mtxplant(substring,tabnames,horizon,importedfile,areasData,colact,colarea):
+    
+    xlxstocsv(tabnames,substring,importedfile)
+    file_location = "temp/" + substring + ".csv"
+                
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV: columns = len(row); break
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        Plants = []; Data = [[] for x in range(columns-1)]  
+        for row in readCSV:
+            tplants = row[0]; 
+            Plants.append(tplants)
+            for col in range(columns-1):
+                val = row[col+1]
+                try: 
+                    val = int(row[col+1])
+                except ValueError:
+                    try:
+                        val = float(row[col+1])
+                    except ValueError:
+                        pass
+                Data[col].append(val)
+        Plants.pop(0)
+    for col in range(columns-1):
+        Data[col].pop(0)
+    
+    state = Data[colact]
+    for z in range(len(state)):
+        if state[z] == "E":
+            Data[colact][z] = 1
+        elif state[z] == "NE":
+            Data[colact][z] = 0
+        else:
+            val = datetime.datetime.strptime (state[z],"%Y-%m-%d %H:%M:%S") 
+            location = horizon.index(val)
+            Data[colact][z] = location+1
+    
+    actives = [i for i, e in enumerate(Data[colact]) if e != 0]
+    Plants_act = []; Data_act = [[] for x in range(columns-1)]
+    for col in range(columns-1):
+        for z in range(len(actives)):
+            Data_act[col].append(Data[col][actives[z]])
+    for z in range(len(actives)):
+            Plants_act.append(Plants[actives[z]])
+    
+    # Identify areas by codde
+    nameAreas = Data_act[colarea]
+    for z in range(len(nameAreas)):
+        location = areasData[0].index(nameAreas[z])
+        Data_act[colarea][z] = location+1
+
+    return Plants_act, Data_act, actives
+
+###############################################################################
+
+def mtxinflow(substring,tabnames,importedfile):
+    
+    xlxstocsv(tabnames,substring,importedfile)
+    file_location = "temp/" + substring + ".csv"
+              
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV: columns = len(row); break
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        Data = [[] for x in range(columns)]  
+        for row in readCSV:
+            for col in range(2):
+                val = row[col]
+                try: 
+                    val = int(row[col])
+                except ValueError:
+                    pass
+                Data[col].append(val)
+            for col in range(columns-2):
+                val = row[col+2]
+                try: 
+                    val = float(row[col+2])
+                except ValueError:
+                    pass
+                Data[col+2].append(val)
+                
+    return Data
+        
+###############################################################################
+        
+def data_file(Param, file):
     
     import openpyxl
     import csv
@@ -455,59 +549,30 @@ def data_file(file):
         
     ###########################################################################
     
+    # wind power plants
     substring = "Wind_config"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/Wind_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/Wind_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        windPlants = []; windData = [[] for x in range(columns-1)]  
-        for row in readCSV:
-            tplants = row[0]; 
-            windPlants.append(tplants)
-            for col in range(columns-1):
-                val = row[col+1]
-                try: 
-                    val = int(row[col+1])
-                except ValueError:
-                    try:
-                        val = float(row[col+1])
-                    except ValueError:
-                        pass
-                windData[col].append(val)
-        windPlants.pop(0)
-    for col in range(columns-1):
-        windData[col].pop(0)
+    windPlants,windData,activesW = mtxplant(substring,tabnames,horizon,
+                                                   importedfile,areasData,6,8)
+    # Wind inflows
+    inflowWindData = []
+    inflowWindData.append(inflowData[0])
+    inflowWindData.append(inflowData[1])
     
-    state = windData[6]
-    for z in range(len(state)):
-        if state[z] == "E":
-            windData[6][z] = 1
-        elif state[z] == "NE":
-            windData[6][z] = 0
-        else:
-            val = datetime.datetime.strptime (state[z],"%Y-%m-%d %H:%M:%S") 
-            location = horizon.index(val)
-            windData[6][z] = location+1
+    substring = "InflowWind"
+    mtx_Data = mtxinflow(substring,tabnames,importedfile)
     
-    actives = [i for i, e in enumerate(windData[6]) if e != 0]
-    windPlants_act = []; windData_act = [[] for x in range(columns-1)]
-    for col in range(columns-1):
-        for z in range(len(actives)):
-            windData_act[col].append(windData[col][actives[z]])
-    for z in range(len(actives)):
-            windPlants_act.append(windPlants[actives[z]])
+    for z in range(len(activesW)):
+        inflowWindData.append(mtx_Data[activesW[z]+2])
+        
+    # Wind speed indices
+    indicesData = []
+    substring = "SpeedIndices"
+    mtx_Data = mtxinflow(substring,tabnames,importedfile)
     
-    # Identify areas by codde
-    nameAreas = windData_act[8]
-    for z in range(len(nameAreas)):
-        location = areasData[0].index(nameAreas[z])
-        windData_act[8][z] = location+1
-    
-    ###########################################################################
-    
+    for z in range(len(activesW)):
+        indicesData.append(mtx_Data[activesW[z]+2])
+        
+    # wind expansion
     substring = "Wind_expn"
     xlxstocsv(tabnames,substring,importedfile)
                     
@@ -538,226 +603,159 @@ def data_file(file):
         location = horizon.index(val)
         expWindData[1][z] = location+1
         
-    ###########################################################################   
-    
-    substring = "InflowWind"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/InflowWind.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/InflowWind.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        inflowWindData = [[] for x in range(columns)]  
-        for row in readCSV:
-            for col in range(2):
-                val = row[col]
-                try: 
-                    val = int(row[col])
-                except ValueError:
-                    pass
-                inflowWindData[col].append(val)
-            for col in range(columns-2):
-                val = row[col+2]
-                try: 
-                    val = float(row[col+2])
-                except ValueError:
-                    pass
-                inflowWindData[col+2].append(val)
-    
-    inflowWindData_act = []
-    inflowWindData_act.append(inflowData[0])
-    inflowWindData_act.append(inflowData[1])
-    for z in range(len(actives)):
-        inflowWindData_act.append(inflowWindData[actives[z]+2])
-            
     ###########################################################################
     
-    substring = "SpeedIndices"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/SpeedIndices.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/SpeedIndices.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        indicesData = [[] for x in range(columns)]  
-        for row in readCSV:
-            for col in range(2):
-                val = row[col]
-                try: 
-                    val = int(row[col])
-                except ValueError:
-                    pass
-                indicesData[col].append(val)
-            for col in range(columns-2):
-                val = row[col+2]
-                try: 
-                    val = float(row[col+2])
-                except ValueError:
-                    pass
-                indicesData[col+2].append(val)
-
-    for col in range(columns):
-        indicesData[col].pop(0)
+    # Data wind model 2
+    if Param.wind_model2 is True:
         
-    indicesData_act = []
-    for z in range(len(actives)):
-        indicesData_act.append(indicesData[actives[z]+2])
+        substring = "Wind_M2_config"
+        xlxstocsv(tabnames,substring,importedfile)
+                        
+        with open('temp/Wind_M2_config.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            for row in readCSV: columns = len(row); break
+        with open('temp/Wind_M2_config.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            windRPlants = []; windRData = [[] for x in range(columns-1)]  
+            for row in readCSV:
+                tplants = row[0]; 
+                windRPlants.append(tplants)
+                for col in range(columns-1):
+                    val = row[col+1]
+                    try: 
+                        val = int(row[col+1])
+                    except ValueError:
+                        try:
+                            val = float(row[col+1])
+                        except ValueError:
+                            pass
+                    windRData[col].append(val)
+            windRPlants.pop(0)
+        for col in range(columns-1):
+            windRData[col].pop(0)
         
-    ###########################################################################
-    
-    substring = "Wind_M2_config"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/Wind_M2_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/Wind_M2_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        windRPlants = []; windRData = [[] for x in range(columns-1)]  
-        for row in readCSV:
-            tplants = row[0]; 
-            windRPlants.append(tplants)
-            for col in range(columns-1):
-                val = row[col+1]
-                try: 
-                    val = int(row[col+1])
-                except ValueError:
-                    try:
-                        val = float(row[col+1])
+        state = windRData[11]
+        for z in range(len(state)):
+            if state[z] == "E":
+                windRData[11][z] = 1
+            elif state[z] == "NE":
+                windRData[11][z] = 0
+            else:
+                val = datetime.datetime.strptime (state[z],"%Y-%m-%d %H:%M:%S") 
+                location = horizon.index(val)
+                windRData[11][z] = location+1
+        
+        actives = [i for i, e in enumerate(windRData[11]) if e != 0]
+        windRPlants_act = []; windRData_act = [[] for x in range(columns-1)]
+        for col in range(columns-1):
+            for z in range(len(actives)):
+                windRData_act[col].append(windRData[col][actives[z]])
+        for z in range(len(actives)):
+                windRPlants_act.append(windRPlants[actives[z]])
+        
+        # Identify areas by codde
+        nameAreas = windRData_act[12]
+        for z in range(len(nameAreas)):
+            try:
+                location = areasData[0].index(nameAreas[z])
+                windRData_act[12][z] = location+1
+            except ValueError:
+                areavalidation(nameAreas[z],substring)
+                
+        # inflow model 2
+        substring = "InflowWind_M2"
+        xlxstocsv(tabnames,substring,importedfile)
+                        
+        with open('temp/InflowWind_M2.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            for row in readCSV: columns = len(row); break
+        with open('temp/InflowWind_M2.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            inflowRealData = [[] for x in range(columns)]  
+            for row in readCSV:
+                for col in range(2):
+                    val = row[col]
+                    try: 
+                        val = int(row[col])
                     except ValueError:
                         pass
-                windRData[col].append(val)
-        windRPlants.pop(0)
-    for col in range(columns-1):
-        windRData[col].pop(0)
-    
-    state = windRData[11]
-    for z in range(len(state)):
-        if state[z] == "E":
-            windRData[11][z] = 1
-        elif state[z] == "NE":
-            windRData[11][z] = 0
-        else:
-            val = datetime.datetime.strptime (state[z],"%Y-%m-%d %H:%M:%S") 
-            location = horizon.index(val)
-            windRData[11][z] = location+1
-    
-    actives = [i for i, e in enumerate(windRData[11]) if e != 0]
-    windRPlants_act = []; windRData_act = [[] for x in range(columns-1)]
-    for col in range(columns-1):
+                    inflowRealData[col].append(val)
+                for col in range(columns-2):
+                    val = row[col+2]
+                    try: 
+                        val = float(row[col+2])
+                    except ValueError:
+                        pass
+                    inflowRealData[col+2].append(val)
+        
+        # inflows for real wind plants
+        inflowRealData_act = []
+        inflowRealData_act.append(inflowData[0])
+        inflowRealData_act.append(inflowData[1])
         for z in range(len(actives)):
-            windRData_act[col].append(windRData[col][actives[z]])
-    for z in range(len(actives)):
-            windRPlants_act.append(windRPlants[actives[z]])
+            inflowRealData_act.append(inflowRealData[actives[z]+2])
+        
+        # indices model 2
+        substring = "SpeedIndices_M2"
+        xlxstocsv(tabnames,substring,importedfile)
+                        
+        with open('temp/SpeedIndices_M2.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            for row in readCSV: columns = len(row); break
+        with open('temp/SpeedIndices_M2.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            indicesRData = [[] for x in range(columns)]  
+            for row in readCSV:
+                for col in range(2):
+                    val = row[col]
+                    try: 
+                        val = int(row[col])
+                    except ValueError:
+                        pass
+                    indicesRData[col].append(val)
+                for col in range(columns-2):
+                    val = row[col+2]
+                    try: 
+                        val = float(row[col+2])
+                    except ValueError:
+                        pass
+                    indicesRData[col+2].append(val)
     
-    # Identify areas by codde
-    nameAreas = windRData_act[12]
-    for z in range(len(nameAreas)):
-        try:
-            location = areasData[0].index(nameAreas[z])
-            windRData_act[12][z] = location+1
-        except ValueError:
-            areavalidation(nameAreas[z],substring)
+        for col in range(columns):
+            indicesRData[col].pop(0)
             
-    ###########################################################################
-    
-    substring = "InflowWind_M2"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/InflowWind_M2.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/InflowWind_M2.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        inflowRealData = [[] for x in range(columns)]  
-        for row in readCSV:
-            for col in range(2):
-                val = row[col]
-                try: 
-                    val = int(row[col])
-                except ValueError:
-                    pass
-                inflowRealData[col].append(val)
-            for col in range(columns-2):
-                val = row[col+2]
-                try: 
-                    val = float(row[col+2])
-                except ValueError:
-                    pass
-                inflowRealData[col+2].append(val)
-    
-    # inflows for real wind plants
-    inflowRealData_act = []
-    inflowRealData_act.append(inflowData[0])
-    inflowRealData_act.append(inflowData[1])
-    for z in range(len(actives)):
-        inflowRealData_act.append(inflowRealData[actives[z]+2])
-    
-    ###########################################################################
-    
-    substring = "SpeedIndices_M2"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/SpeedIndices_M2.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/SpeedIndices_M2.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        indicesRData = [[] for x in range(columns)]  
-        for row in readCSV:
-            for col in range(2):
-                val = row[col]
-                try: 
-                    val = int(row[col])
-                except ValueError:
-                    pass
-                indicesRData[col].append(val)
-            for col in range(columns-2):
-                val = row[col+2]
-                try: 
-                    val = float(row[col+2])
-                except ValueError:
-                    pass
-                indicesRData[col+2].append(val)
-
-    for col in range(columns):
-        indicesRData[col].pop(0)
+        indicesRData_act = []
+        for z in range(len(actives)):
+            indicesRData_act.append(indicesRData[actives[z]+2])
         
-    indicesRData_act = []
-    for z in range(len(actives)):
-        indicesRData_act.append(indicesRData[actives[z]+2])
+        # power curve model2
+        substring = "WPowCurve_M2"
+        xlxstocsv(tabnames,substring,importedfile)
         
-    ###########################################################################
-    
-    substring = "WPowCurve_M2"
-    xlxstocsv(tabnames,substring,importedfile)
-    
-    with open('temp/WPowCurve_M2.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        powerData = [[] for x in range(len(windRPlants)*3)]               
-        for row in readCSV:
-            for col in range(len(windRPlants)*3):
-                val = row[col]
-                try: 
-                    val = float(row[col])
-                except ValueError:
-                    pass
-                powerData[col].append(val)
-    for col in range(len(windRPlants)*3):
-        powerData[col].pop(0)            
-    ctData = [[] for x in range(len(windRPlants))]
-    for z in range(len(windRPlants)):
-        resl = int(1+((windRData[3][z]-windRData[2][z])/windRData[4][z]))
-        pw = powerData[3*z][:resl]
-        ct = powerData[3*z+1][:resl]
-        tpr = powerData[3*z+2][:windRData[14][z]] 
-        ctData[z]=[pw,ct,tpr]
-    
-    ctData_act = []
-    for z in range(len(actives)):
-        ctData_act.append(ctData[actives[z]])
+        with open('temp/WPowCurve_M2.csv') as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            powerData = [[] for x in range(len(windRPlants)*3)]               
+            for row in readCSV:
+                for col in range(len(windRPlants)*3):
+                    val = row[col]
+                    try: 
+                        val = float(row[col])
+                    except ValueError:
+                        pass
+                    powerData[col].append(val)
+        for col in range(len(windRPlants)*3):
+            powerData[col].pop(0)            
+        ctData = [[] for x in range(len(windRPlants))]
+        for z in range(len(windRPlants)):
+            resl = int(1+((windRData[3][z]-windRData[2][z])/windRData[4][z]))
+            pw = powerData[3*z][:resl]
+            ct = powerData[3*z+1][:resl]
+            tpr = powerData[3*z+2][:windRData[14][z]] 
+            ctData[z]=[pw,ct,tpr]
+        
+        ctData_act = []
+        for z in range(len(actives)):
+            ctData_act.append(ctData[actives[z]])
             
     ###########################################################################
     
@@ -886,55 +884,11 @@ def data_file(file):
         
     ###########################################################################
     
+    # Small plants
     substring = "Small_config"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/Small_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break
-    with open('temp/Small_config.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        smallPlants = []; smallData = [[] for x in range(columns-1)]  
-        for row in readCSV:
-            splants = row[0]; 
-            smallPlants.append(splants)
-            for col in range(columns-1):
-                val = row[col+1]
-                try: 
-                    val = float(row[col+1])
-                except ValueError:
-                    pass
-                smallData[col].append(val)
-        smallPlants.pop(0)
-    for col in range(columns-1):
-        smallData[col].pop(0)
-    
-    state = smallData[1]
-    for z in range(len(state)):
-        if state[z] == "E":
-            smallData[1][z] = 1
-        elif state[z] == "NE":
-            smallData[1][z] = 0
-        else:
-            val = datetime.datetime.strptime (state[z],"%Y-%m-%d %H:%M:%S") 
-            location = horizon.index(val)
-            smallData[1][z] = location+1
-    
-    actives = [i for i, e in enumerate(smallData[1]) if e != 0]
-    smallPlants_act = []; smallData_act = [[] for x in range(columns-1)]
-    for col in range(columns-1):
-        for z in range(len(actives)):
-            smallData_act[col].append(smallData[col][actives[z]])
-    for z in range(len(actives)):
-            smallPlants_act.append(smallPlants[actives[z]])
-    
-    nameAreas = smallData_act[3]
-    for z in range(len(nameAreas)):
-        location = areasData[0].index(nameAreas[z])
-        smallData_act[3][z] = location+1
-    
-    ###########################################################################
-    
+    smallPlants_act,smallData_act,smactives = mtxplant(substring,tabnames,horizon,importedfile,
+                                       areasData,1,3)
+                
     substring = "Small_expn"
     xlxstocsv(tabnames,substring,importedfile)
                     
@@ -986,31 +940,72 @@ def data_file(file):
                 emissionsData[col].append(val)
     for col in range(columns-1):
         emissionsData[col].pop(0) 
-        
+    
     ###########################################################################
     
-    # export data            
-    DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData_act,
-    "blocksData":blocksData,"horizon":horizon,"demandData":demandData, 
-    "thermalData":thermalData_act,"thermalPlants":thermalPlants_act,"expThData":expThData,
-    "hydroPlants":hydroPlants_act,"volData":volData_act,"windPlants":windPlants_act,
-    "windData":windData_act,"battData":battData_act,"batteries":batteries_act,"linesData":linesData,
-    "numAreas":numAreas,"areasData":areasData,"expData":expData,"expLines":expLinesData,
-    "hydroReservoir":hPlantsReser,"expWindData":expWindData,"expBttData":expBttData,
-    "smallData":smallData_act,"smallPlants":smallPlants_act,"expSmData":expSmData,
-    "indicesData":indicesData_act, "costData":costDataS, "fuelData":costData,
-    "windRPlants":windRPlants_act,"windRData":windRData_act,"inflowRealData":inflowRealData_act,
-    "indicesRData":indicesRData_act,"ctData_act":ctData_act,"gatesData":gatesData}
+    # Big solar
+    substring = "SolarB_config"
+    SB_act,SBData,SBactives = mtxplant(substring,tabnames,horizon,importedfile,
+                                       areasData,6,8)
+    # Distributed solar
+    substring = "SolarD_config"
+    SD_act,SDData,SDactives = mtxplant(substring,tabnames,horizon,importedfile,
+                                       areasData,4,5)
+    # Solar inflows
+    inflowSolarData = []
+    inflowSolarData.append(inflowData[0])
+    inflowSolarData.append(inflowData[1])
     
+    substring = "InflowSolar"
+    mtx_Data = mtxinflow(substring,tabnames,importedfile)
+    inflowSolarData.append(mtx_Data)
+    
+    # Solar temperature
+    substring = "TemperatureCell"
+    TemperatureCell = mtxinflow(substring,tabnames,importedfile)
+    
+    # Solar speed indices
+    substring = "RadiationIndices"
+    indicesRadData = mtxinflow(substring,tabnames,importedfile)
+    
+    ###########################################################################
+    
+    # export data   
+    if Param.wind_model2 is True:
+        DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData,
+        "blocksData":blocksData,"horizon":horizon,"demandData":demandData, 
+        "thermalData":thermalData_act,"thermalPlants":thermalPlants_act,"expThData":expThData,
+        "hydroPlants":hydroPlants_act,"volData":volData_act,"windPlants":windPlants,
+        "windData":windData,"battData":battData_act,"batteries":batteries_act,"linesData":linesData,
+        "numAreas":numAreas,"areasData":areasData,"expData":expData,"expLines":expLinesData,
+        "hydroReservoir":hPlantsReser,"expWindData":expWindData,"expBttData":expBttData,
+        "smallData":smallData_act,"smallPlants":smallPlants_act,"expSmData":expSmData,
+        "indicesData":indicesData, "costData":costDataS, "fuelData":costData,
+        "windRPlants":windRPlants_act,"windRData":windRData_act,"inflowRealData":inflowRealData_act,
+        "indicesRData":indicesRData_act,"ctData_act":ctData_act,"gatesData":gatesData}
+    else:
+        DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData,
+        "blocksData":blocksData,"horizon":horizon,"demandData":demandData, 
+        "thermalData":thermalData_act,"thermalPlants":thermalPlants_act,"expThData":expThData,
+        "hydroPlants":hydroPlants_act,"volData":volData_act,"windPlants":windPlants,
+        "windData":windData,"battData":battData_act,"batteries":batteries_act,"linesData":linesData,
+        "numAreas":numAreas,"areasData":areasData,"expData":expData,"expLines":expLinesData,
+        "hydroReservoir":hPlantsReser,"expWindData":expWindData,"expBttData":expBttData,
+        "smallData":smallData_act,"smallPlants":smallPlants_act,"expSmData":expSmData,
+        "indicesData":indicesData, "costData":costDataS, "fuelData":costData,"gatesData":gatesData,
+        "SB_actives":SB_act,"SBData":SBData,"SD_actives":SD_act,"SDData":SDData,
+        "inflowSolarData":inflowSolarData,"indicesRad":indicesRadData,
+        "TemperatureCell":TemperatureCell}
+        
     pickle.dump(DataDictionary, open( "savedata/data_save.p", "wb" ) )
     
     # export data            
     DataDictionary2 = {"blocksData":blocksData,"rationingData":rationingData,
     "thermalPlants":thermalPlants_act,"hydroPlants":hydroPlants_act,"numAreas":numAreas,
-    "volData":volData_act,"windPlants":windPlants_act,"battData":battData_act,
+    "volData":volData_act,"windPlants":windPlants,"battData":battData_act,
     "batteries":batteries_act,"linesData":linesData,"hydroReservoir":hPlantsReser,
     "smallPlants":smallPlants_act,"emissionsData":emissionsData,"thermalData":thermalData_act,
-    "smallData":smallData_act,"windData":windData_act,"b_storageData":b_storageData}
+    "smallData":smallData_act,"windData":windData,"b_storageData":b_storageData}
     
     pickle.dump(DataDictionary2, open( "savedata/data_save_iter.p", "wb" ) )
    

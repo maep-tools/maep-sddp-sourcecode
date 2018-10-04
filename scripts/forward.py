@@ -384,8 +384,8 @@ def data(confidence, Param, iteration, fcf_Operator):
         
         # define opf constraints
         def ctOpf(model, ct, b):
-            return( sum(model.balance[area,b] * model.flines[ct, area]
-                    for area in model.Areas if (ct, area) in model.linebus) <= model.line[ct, b])
+            return( -model.lineLimit[ct,b] <= sum(model.balance[area,b] * model.flines[ct, area]
+                    for area in model.Areas if (ct, area) in model.linebus) <= model.lineLimit[ct,b])
         # add constraint to model according to indices
         model.ctOpf = pyomo.Constraint(model.Circuits, model.Blocks, rule=ctOpf)
     
@@ -561,8 +561,8 @@ def data(confidence, Param, iteration, fcf_Operator):
 
             # solver
             opt.solve(model)#, symbolic_solver_labels=False) #, tee=True)
-            #with open('pyomo_model.txt', 'w') as f:
-            #    model.pprint(ostream=f)
+            with open('pyomo_model.txt', 'w') as f:
+                model.pprint(ostream=f)
             # instance.display()
 
             # objective function value

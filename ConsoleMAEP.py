@@ -20,13 +20,13 @@ start = timeit.default_timer()
 #==============================================================================
 
 # Parameters simulation
-file = 'test_model'       # input file name (DataSystem location)
+file = 'CS1c'       # input file name (DataSystem location)
 
-class Parameters:
+class Param:
     
-    max_iter = 3             # Maximun number of iterations
+    max_iter = 2              # Maximun number of iterations
     bnd_stages = 3           # Boundary stages
-    stages = 3 + bnd_stages  # planning horizon: (months + bundary months)
+    stages = 30 + bnd_stages  # planning horizon: (months + bundary months)
     seriesBack = 3           # scenarios for the backward phase
     seriesForw = 3           # scenarios the forward phase
     
@@ -38,29 +38,33 @@ class Parameters:
     commit = 0.0    # risk-measure comminment
     
     # read data options
-    read_data = True       # read the input file
+    read_data = True        # read the input file
     param_calc = True       # parameters calculation
     param_opf = True        # OPF model
     
+    # renewables
+    wind_freeD = False         # Free distribution model
+    w_free_samples = 50      # sample for p-efficient points calculation
+    wind_model2 = False       # Second model of wind plants (inconcluse)
+
     # model components
-    wind_model2 = False     # Second model of wind plants (inconcluse)
     flow_gates = False      # Security constraints (inefficient)   
     emss_curve = True       # emissions curve calculation 
     thermal_co2 = [1, 1]    # Emission factor type selection [tech:Ton/Mwh, Fuel:MBTU/MWh]  
     
     # operation model options
-    emissions = True        # ObjectiveFunction - emissions costs
-    policy = True           # algorithm: backward and forward 
-    simulation = False      # algorithm: only forward (it needs cost-to-go function)
-    parallel = False        # parallelization module (inconcluse)
+    emissions = False        # ObjectiveFunction - emissions costs
+    policy = True            # algorithm: backward and forward 
+    simulation = True        # algorithm: only forward (it needs cost-to-go function)
+    parallel = False         # parallelization module (inconcluse)
     
     # PRINT ORDER: 1. dispatch curves, 2. marginal cost
-    results = True            # Print main variables 
-    curves = [True, True]    # selection of secondary results (experimental)
+    results = True           # Print main variables 
+    curves = [True, True]    # Selection of secondary results (experimental)
 
 #==============================================================================
 # run model
-run_model.execution(Parameters, file)
+run_model.execution(Param, file)
               
 #==============================================================================
 
