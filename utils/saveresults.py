@@ -1,10 +1,8 @@
 
-def saveiter(k,s,lenblk,thermalPlants,instance,modelprodT,genThermal,modelprodH,
-         modelprodB,modeldeficit,modelchargeB,modellvl,modelvol,hydroPlants,
-         batteries,genHydro,genBatteries,loadBatteries,lvlBatteries,lvlHydro,
-         genDeficit,numAreas,linTransfer,modelline,linesData,spillHydro,modelspillH,
-         genwind,modelprodW,modelspillW,spillwind,genSmall,smallPlants,modelprodS,
-         rnwArea,Param,emissCurve):
+def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
+             genHydro,genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,
+             numAreas,linTransfer,linesData,spillHydro,genwind,spillwind,genSmall,
+             smallPlants,rnwArea,Param,emissCurve,genRnws):
     
     import pickle
     dict_data = pickle.load(open("savedata/data_save_iter.p", "rb"))
@@ -13,18 +11,19 @@ def saveiter(k,s,lenblk,thermalPlants,instance,modelprodT,genThermal,modelprodH,
     smallData = dict_data['smallData']
     
     # extracting results
-    for gen_T in [modelprodT]: Tobject = getattr(instance, str(gen_T))
-    for gen_S in [modelprodS]: Sobject = getattr(instance, str(gen_S))
-    for gen_H in [modelprodH]: Hobject = getattr(instance, str(gen_H))
-    for gen_W in [modelprodW]: Wobject = getattr(instance, str(gen_W))
-    for spl_W in [modelspillW]: sWobject = getattr(instance, str(spl_W))
-    for gen_B in [modelprodB]: Bobject = getattr(instance, str(gen_B))
-    for gen_D in [modeldeficit]: Dobject = getattr(instance, str(gen_D))
-    for load_B in [modelchargeB]: cBobject = getattr(instance, str(load_B))
-    for lvl_B in [modellvl]: lBobject = getattr(instance, str(lvl_B))
-    for lvl_H in [modelvol]: lHobject = getattr(instance, str(lvl_H))
-    for spl_H in [modelspillH]: sHobject = getattr(instance, str(spl_H))
-    for trf_L in [modelline]: linobject = getattr(instance, str(trf_L))
+    for gen_T in [instance.prodT]: Tobject = getattr(instance, str(gen_T))
+    for gen_S in [instance.prodS]: Sobject = getattr(instance, str(gen_S))
+    for gen_H in [instance.prodH]: Hobject = getattr(instance, str(gen_H))
+    for gen_W in [instance.prodW]: Wobject = getattr(instance, str(gen_W))
+    for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
+    for spl_W in [instance.spillW]: sWobject = getattr(instance, str(spl_W))
+    for gen_B in [instance.prodB]: Bobject = getattr(instance, str(gen_B))
+    for gen_D in [instance.deficit]: Dobject = getattr(instance, str(gen_D))
+    for load_B in [instance.chargeB]: cBobject = getattr(instance, str(load_B))
+    for lvl_B in [instance.lvl]: lBobject = getattr(instance, str(lvl_B))
+    for lvl_H in [instance.vol]: lHobject = getattr(instance, str(lvl_H))
+    for spl_H in [instance.spillH]: sHobject = getattr(instance, str(spl_H))
+    for trf_L in [instance.line]: linobject = getattr(instance, str(trf_L))
 
     for i, plant in enumerate(thermalPlants):
         for j in lenblk:
@@ -49,6 +48,12 @@ def saveiter(k,s,lenblk,thermalPlants,instance,modelprodT,genThermal,modelprodH,
             else:
                 genwind[k][s][i][j] = 0
 
+    if Param.dist_free is True:
+        
+        for i in range(numAreas):
+            for j in lenblk:
+                genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
+                
     for i, plant in enumerate(batteries):
         lvlBatteries[k][s][i] = lBobject[plant].value
         for j in lenblk:
@@ -75,13 +80,8 @@ def saveiter(k,s,lenblk,thermalPlants,instance,modelprodT,genThermal,modelprodH,
                 
             emissCurve[k][s][j] = aux1 + aux2 + aux3
             
-        return (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
-                lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve)
-            
-    else:
-            
-        return (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
-                lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve)
+    return (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
+             lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve,genRnws)
 
 def printresults(Param,sol_scn):
 

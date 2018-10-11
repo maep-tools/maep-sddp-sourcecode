@@ -33,6 +33,7 @@ def mtxplant(substring,tabnames,horizon,importedfile,areasData,colact,colarea):
         Data[col].pop(0)
     
     state = Data[colact]
+    
     for z in range(len(state)):
         if state[z] == "E":
             Data[colact][z] = 1
@@ -89,6 +90,33 @@ def mtxinflow(substring,tabnames,importedfile):
                 Data[col+2].append(val)
                 
     return Data
+
+def mtxincosts(substring,tabnames,importedfile):
+
+    xlxstocsv(tabnames,substring,importedfile)
+    file_location = "temp/" + substring + ".csv"
+             
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV: columns = len(row); break               
+    with open(file_location) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        Data = [[] for x in range(columns-1)];  
+        for row in readCSV:
+            for col in range(columns-1):
+                val = row[col+1]
+                try: 
+                    val = float(row[col+1])
+                except ValueError:
+                    pass
+                Data[col].append(val)
+    
+    fueldata = []; DataS = []
+    for col in range(columns-1):
+        fueldata.append(Data[col][0])
+        DataS.append(Data[col].pop(0))
+        
+    return Data, DataS
         
 ###############################################################################
         
@@ -243,27 +271,7 @@ def data_file(Param, file):
     ###########################################################################
     
     substring = "FuelCost"
-    xlxstocsv(tabnames,substring,importedfile)
-                    
-    with open('temp/FuelCost.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break               
-    with open('temp/FuelCost.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        costData = [[] for x in range(columns-1)];  
-        for row in readCSV:
-            for col in range(columns-1):
-                val = row[col+1]
-                try: 
-                    val = float(row[col+1])
-                except ValueError:
-                    pass
-                costData[col].append(val)
-    
-    fueldata = []; costDataS = []
-    for col in range(columns-1):
-        fueldata.append(costData[col][0])
-        costDataS.append(costData[col].pop(0))
+    costData, costDataS = mtxincosts(substring,tabnames,importedfile)
         
     ###########################################################################
     
@@ -868,19 +876,20 @@ def data_file(Param, file):
                 vecdata.append(val)
             gatesData.append(vecdata)
     
-    gatesData.pop(0) 
-    for z in range(len(gatesData)):
-        
-        val = datetime.datetime.strptime (gatesData[z][2],"%Y-%m-%d %H:%M:%S") 
-        valfin = datetime.datetime.strptime (gatesData[z][3],"%Y-%m-%d %H:%M:%S")
-
-        location = horizon.index(val)
-        gatesData[z][2] = location+1
-        locationfin = horizon.index(valfin)
-        gatesData[z][3] = locationfin+1
-
-        gatesData[z][0] = int(gatesData[z][0])
-        gatesData[z][1] = float(gatesData[z][1])
+    if Param.flow_gates is True:
+        gatesData.pop(0) 
+        for z in range(len(gatesData)):
+            
+            val = datetime.datetime.strptime (gatesData[z][2],"%Y-%m-%d %H:%M:%S") 
+            valfin = datetime.datetime.strptime (gatesData[z][3],"%Y-%m-%d %H:%M:%S")
+    
+            location = horizon.index(val)
+            gatesData[z][2] = location+1
+            locationfin = horizon.index(valfin)
+            gatesData[z][3] = locationfin+1
+    
+            gatesData[z][0] = int(gatesData[z][0])
+            gatesData[z][1] = float(gatesData[z][1])
         
     ###########################################################################
     
@@ -944,21 +953,16 @@ def data_file(Param, file):
     ###########################################################################
     
     # Big solar
-    substring = "SolarB_config"
+    substring = "SolarL_config"
     SB_act,SBData,SBactives = mtxplant(substring,tabnames,horizon,importedfile,
-                                       areasData,6,8)
+                                       areasData,7,8)
     # Distributed solar
     substring = "SolarD_config"
     SD_act,SDData,SDactives = mtxplant(substring,tabnames,horizon,importedfile,
-                                       areasData,4,5)
+                                       areasData,3,4)
     # Solar inflows
-    inflowSolarData = []
-    inflowSolarData.append(inflowData[0])
-    inflowSolarData.append(inflowData[1])
-    
     substring = "InflowSolar"
-    mtx_Data = mtxinflow(substring,tabnames,importedfile)
-    inflowSolarData.append(mtx_Data)
+    inflowSolarData = mtxinflow(substring,tabnames,importedfile)
     
     # Solar temperature
     substring = "TemperatureCell"
@@ -967,6 +971,19 @@ def data_file(Param, file):
     # Solar speed indices
     substring = "RadiationIndices"
     indicesRadData = mtxinflow(substring,tabnames,importedfile)
+    
+    ###########################################################################
+    
+    # Big solar
+    substring = "Biomass_config"
+    BM_act,BMData,BMactives = mtxplant(substring,tabnames,horizon,importedfile,
+                                       areasData,11,13)
+    # Solar inflows
+    substring = "Mass_Inflow"
+    inflowBioData = mtxinflow(substring,tabnames,importedfile)
+    
+    substring = "MassCost"
+    costBData, costBDataS = mtxincosts(substring,tabnames,importedfile)
     
     ###########################################################################
     
@@ -982,7 +999,8 @@ def data_file(Param, file):
         "smallData":smallData_act,"smallPlants":smallPlants_act,"expSmData":expSmData,
         "indicesData":indicesData, "costData":costDataS, "fuelData":costData,
         "windRPlants":windRPlants_act,"windRData":windRData_act,"inflowRealData":inflowRealData_act,
-        "indicesRData":indicesRData_act,"ctData_act":ctData_act,"gatesData":gatesData}
+        "indicesRData":indicesRData_act,"ctData_act":ctData_act,"gatesData":gatesData, 
+        "costData":costDataS, "fuelData":costData}
     else:
         DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData,
         "blocksData":blocksData,"horizon":horizon,"demandData":demandData, 
@@ -993,9 +1011,10 @@ def data_file(Param, file):
         "hydroReservoir":hPlantsReser,"expWindData":expWindData,"expBttData":expBttData,
         "smallData":smallData_act,"smallPlants":smallPlants_act,"expSmData":expSmData,
         "indicesData":indicesData, "costData":costDataS, "fuelData":costData,"gatesData":gatesData,
-        "SB_actives":SB_act,"SBData":SBData,"SD_actives":SD_act,"SDData":SDData,
-        "inflowSolarData":inflowSolarData,"indicesRad":indicesRadData,
-        "TemperatureCell":TemperatureCell}
+        "Solar_large":SB_act,"SlargeData":SBData,"Solar_dist":SD_act,"SdistData":SDData,
+        "inflowSolarData":inflowSolarData,"indicesRad":indicesRadData,"TemperatureCell":TemperatureCell,
+        "BiomassPlants":BM_act,"BiomassData":BMData,"inflowBioData":inflowBioData, 
+        "costData":costDataS, "fuelData":costData}
         
     pickle.dump(DataDictionary, open( "savedata/data_save.p", "wb" ) )
     
@@ -1005,7 +1024,8 @@ def data_file(Param, file):
     "volData":volData_act,"windPlants":windPlants,"battData":battData_act,
     "batteries":batteries_act,"linesData":linesData,"hydroReservoir":hPlantsReser,
     "smallPlants":smallPlants_act,"emissionsData":emissionsData,"thermalData":thermalData_act,
-    "smallData":smallData_act,"windData":windData,"b_storageData":b_storageData}
+    "smallData":smallData_act,"windData":windData,"b_storageData":b_storageData,
+    "BiomassPlants":BM_act,"BiomassData":BMData}
     
     pickle.dump(DataDictionary2, open( "savedata/data_save_iter.p", "wb" ) )
    

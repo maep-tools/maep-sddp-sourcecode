@@ -48,7 +48,7 @@ def inputbatteries(dict_data,stages):
 
 ###############################################################################
 
-def inputlines(dict_data,stages):
+def inputlines(Param,dict_data):
 
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
     
@@ -60,7 +60,7 @@ def inputlines(dict_data,stages):
     
     # Lines limits
     limitStages = []
-    for stage in range(stages):
+    for stage in range(Param.stages):
     
         LinesMatrix = [[0 for x in range(numAreas)] for y in range(numAreas)] 
         for z in range(len(linesData)):
@@ -73,9 +73,9 @@ def inputlines(dict_data,stages):
         
         for i in range(len(expLines)):
             
-            if expLines[i][2] <= stages:
+            if expLines[i][2] <= Param.stages:
                 
-                for stage in range(expLines[i][2],stages+1):
+                for stage in range(expLines[i][2],Param.stages+1):
                     
                     limitStages[stage-1][int(expLines[i][0])-1][int(expLines[i][1])-1]= expLines[i][3]*yearvector[stage-1]
                     limitStages[stage-1][int(expLines[i][1])-1][int(expLines[i][0])-1]= expLines[i][4]*yearvector[stage-1]
@@ -86,22 +86,23 @@ def inputlines(dict_data,stages):
     setlines = []
     gateslimit = [[] for x in range(numGates)]
 
-    for x in range(numGates):
-        for stage in range(stages):
-            if stage+1 >= gateLines[x][2] and stage+1 <= gateLines[x][3]:
-                limit = gateLines[x][1]*yearvector[stage]
-                gateslimit[x].append(limit)
-            else:
-                gateslimit[x].append(9999999)
-        for y in range(sets[x]):
-            nodo1 = gateLines[x][4+(y*2)]
-            nodo2 = gateLines[x][5+(y*2)]
-            for z in range(len(linesData)):
-                line = [linesData[z][0],linesData[z][1]]
-                if [nodo1,nodo2] == line:
-                    setlines.append([x+1,z+1,nodo2,1])
-                if [nodo2,nodo1] == line:
-                    setlines.append([x+1,z+1,nodo2,-1])
+    if Param.flow_gates is True:
+        for x in range(numGates):
+            for stage in range(Param.stages):
+                if stage+1 >= gateLines[x][2] and stage+1 <= gateLines[x][3]:
+                    limit = gateLines[x][1]*yearvector[stage]
+                    gateslimit[x].append(limit)
+                else:
+                    gateslimit[x].append(9999999)
+            for y in range(sets[x]):
+                nodo1 = gateLines[x][4+(y*2)]
+                nodo2 = gateLines[x][5+(y*2)]
+                for z in range(len(linesData)):
+                    line = [linesData[z][0],linesData[z][1]]
+                    if [nodo1,nodo2] == line:
+                        setlines.append([x+1,z+1,nodo2,1])
+                    if [nodo2,nodo1] == line:
+                        setlines.append([x+1,z+1,nodo2,-1])
     # export data
     DataDictionary = {"l_limits":limitStages,"gatesets":setlines,"gateslimit":gateslimit}
     

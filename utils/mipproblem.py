@@ -1,9 +1,14 @@
-def fisrt_vec(weightvec2,probvec,maxD,eps_all):
+def fisrt_vec(weightvec2,probvec,eps_all):
     
     import pyomo.environ as pyomo
     from pyomo.opt import SolverFactory
 
-    opt = SolverFactory('gurobi', solver_io='python')
+    #opt = SolverFactory('gurobi', solver_io='python')
+    #opt = SolverFactory('gurobi')
+    #opt = SolverFactory('cplex',solver_io='python')
+    #opt = SolverFactory('cplex')
+    opt = SolverFactory('cplex',solver_io='nl')
+    
     model = pyomo.ConcreteModel()
 
     stat = list(range(1, len(weightvec2[0])+1))
@@ -34,7 +39,7 @@ def fisrt_vec(weightvec2,probvec,maxD,eps_all):
     model.confidence = pyomo.Constraint(rule=confidence)
     
     for i in range(len(weightvec2)): 
-        model.prob[i+1] = probvec[i]
+        model.prob[i+1] = round(probvec[i],5)
         for j in range(len(weightvec2[0])):
             model.weight[i+1,j+1] = weightvec2[i][j]    
     
@@ -104,7 +109,7 @@ def pelp_vec(weightvec2,probvec,first_plep,iteration,maxD,eps_all):
     
     # parameters
     for i in range(len(weightvec2)): 
-        model.prob[i+1] = probvec[i]
+        model.prob[i+1] = float("{0:.4f}".format(probvec[i]))
         for j in range(len(weightvec2[0])):
             model.weight[i+1,j+1] = weightvec2[i][j]
     

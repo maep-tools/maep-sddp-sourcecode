@@ -1,8 +1,9 @@
-def inputdata(dictionary,sensDem):
+def inputdata(dictionary,Param):
     
     import calendar
     import numpy as np
     import pickle
+    from utils.paramvalidation import scenariosvalidation
     
     # Dictionary    
     horizon = dictionary['horizon']
@@ -21,6 +22,9 @@ def inputdata(dictionary,sensDem):
     costData = dictionary['costData']
     fuelData = dictionary['fuelData']
     gatesData = dictionary['gatesData']
+    biomassPlants = dictionary["BiomassPlants"]
+    inflowBioData = dictionary["inflowBioData"]
+    biomassData = dictionary["BiomassData"]
     
     ###########################################################################
             
@@ -28,13 +32,17 @@ def inputdata(dictionary,sensDem):
     
     # save data
     demand = [[] for x in range(numAreas)]; yearvector = []; thermalMax = []; smallMax = []
-    thermalMin = []
+    thermalMin = []; biomassMin = []; biomassMax = []
     
     numBlocks = len(blocksData[0]) # Number of blocks
     stages = len(demandData[0]) # number of stages
     scenarios = int((len(inflowData[0])-1)/stages) # inflow scenarios
     
+    # scenarios validation
+    scenariosvalidation(scenarios,Param.seriesBack)
+    
     inflow_hydro = [[[] for _ in range(2) ] for _ in range(len(hydroPlants))]
+    inflow_biomass = [[[] for _ in range(2) ] for _ in range(len(biomassPlants))]
     
     # areas with demand
     demandArea = []
@@ -57,11 +65,13 @@ def inputdata(dictionary,sensDem):
         # if days[1] == 29: # standard
         #    aux = 28*24
         yearvector.append(aux)
+        
         # Demand
         for k in range (numAreas):        
-            Dmon = [x*z*aux*sensDem for x, z in zip(demandAux[k][0:],blocksData[0][0:])]
+            Dmon = [x*z*aux*Param.sensDem for x, z in zip(demandAux[k][0:],blocksData[0][0:])]
             demand[k].append(Dmon)
-        # Series
+        
+        # Series hydro
         for k in range(2,2+len(hydroPlants)):
             stage_inflow = inflowData[k][scenarios*i+1:scenarios*(i+1)+1]
             stage_inflow[:] = [x*(aux*3600*1e-6) for x in stage_inflow]
@@ -69,6 +79,14 @@ def inputdata(dictionary,sensDem):
                 stage_inflow[:] = [x*0 for x in stage_inflow]
             aux_inflow = np.hstack((inflow_hydro[k-2][1], stage_inflow))        
             inflow_hydro[k-2][1] = aux_inflow
+        
+        # Series biomass
+        for k in range(2,2+len(biomassPlants)):
+            stage_inflow = inflowBioData[k][scenarios*i+1:scenarios*(i+1)+1]
+            if biomassData[11][k-2] > i+1: # initial stage for inflows
+                stage_inflow[:] = [x*0 for x in stage_inflow]
+            aux_inflow = np.hstack((inflow_biomass[k-2][1], stage_inflow))        
+            inflow_biomass[k-2][1] = aux_inflow
         
         # Thermal data + unavailability
         gmax = [x * aux * (1-(z/100)) for x,z in zip(thermalData[0][0:],thermalData[9][0:])]
@@ -78,6 +96,15 @@ def inputdata(dictionary,sensDem):
                 gmax[k] = gmax[k]*0
                 gmin[k] = gmin[k]*0
         thermalMax.append(gmax); thermalMin.append(gmin) 
+        
+        # Biomass data + unavailability
+        gbmax = [x * aux * (1-(z/100)) for x,z in zip(biomassData[5][0:],biomassData[15][0:])]
+        gbmin = [x * aux * (1-(z/100)) for x,z in zip(biomassData[3][0:],biomassData[15][0:])] 
+        for k in range(len(biomassPlants)):
+            if biomassData[11][k] > i+1:
+                gbmax[k] = gbmax[k]*0
+                gbmin[k] = gbmin[k]*0
+        biomassMax.append(gbmax); biomassMin.append(gbmin)
         
         # Small plants + unavailability
         gmaxSmall = [x * aux * (1-(z/100)) for x,z in zip(smallData[0][0:],smallData[7][0:])] 
@@ -92,6 +119,12 @@ def inputdata(dictionary,sensDem):
         inflow_hydro[i][0] = inflowData[2+i][0] 
         inflow_hydro[i][1] = aux_resize
     
+    # Biomass inflow series
+    for i in range(len(biomassPlants)):
+        aux_resize = np.resize(inflow_biomass[i][1], [stages,scenarios]) 
+        inflow_biomass[i][0] = inflowBioData[2+i][0] 
+        inflow_biomass[i][1] = aux_resize
+        
     ###########################################################################
 
     # Expansion of thermal plants
@@ -141,7 +174,11 @@ def inputdata(dictionary,sensDem):
     area_hydro = []
     for n in range(len(hydroPlants)): 
         area_hydro.append(volData[11][n])
-    
+    #Area biomass
+    area_biomass = []
+    for n in range(len(biomassPlants)): 
+        area_biomass.append(biomassData[13][n])
+        
     numGates = len(gatesData)
     
     ###########################################################################
@@ -149,7 +186,8 @@ def inputdata(dictionary,sensDem):
     DataDictionary = {"thermalMax":thermalMax,"inflow_hydro":inflow_hydro,"demand":demand,
     "numBlocks":numBlocks,"area_hydro":area_hydro,"area_thermal":area_thermal,
     "opCost":opCost,"smallMax":smallMax,"area_small":area_small,"thermalMin":thermalMin,
-    "numGates":numGates,"demandArea":demandArea}
+    "numGates":numGates,"demandArea":demandArea,"inflow_biomass":inflow_biomass,
+    "area_biomass":area_biomass,"biomassMin":biomassMin,"biomassMax":biomassMax}
     
     pickle.dump(DataDictionary, open( "savedata/format_save.p", "wb" ) )
     

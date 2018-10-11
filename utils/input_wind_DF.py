@@ -1,4 +1,4 @@
-def inputFreeWind(dict_data,Param):
+def inputDFWind(dict_data,Param):
     
     import pickle
     import numpy as np
@@ -19,6 +19,9 @@ def inputFreeWind(dict_data,Param):
     power_area = [] # pmax = [0]*numAreas
     RnwArea = []
     
+    for col in range(len(windPlants)):
+        indicesData[col].pop(0)
+        
     for area in range(numAreas):
         
         # Set of plants for each area
@@ -69,10 +72,10 @@ def inputFreeWind(dict_data,Param):
                                 
                                 mu = scenario_inflow[k]*intensities[i][n][j]
                                 dev = (deviation * mu)**0.5
-                                sample = np.random.normal(mu, dev, Param.w_free_samples)
+                                sample = np.random.normal(mu, dev, Param.dist_samples)
                                 
                                 sample_power = []
-                                for count in range(Param.w_free_samples):
+                                for count in range(Param.dist_samples):
                                     if sample[count] > windData[12][idx] or sample[count] < windData[11][idx]:
                                         sample_power.append(0)
                                     elif sample[count] > windData[5][idx] and sample[count] <= windData[12][idx]:
@@ -84,12 +87,12 @@ def inputFreeWind(dict_data,Param):
                                 
                             else:
                                 # Plants with entrance stage different than cero
-                                speed_sc.append([0]*Param.w_free_samples)
+                                speed_sc.append([0]*Param.dist_samples)
                             
                         power_wind_var[i][n][k]= speed_sc 
             
-        # Save areas
-        power_area.append(power_wind_var)
+            # Save areas
+            power_area.append(power_wind_var)
     
     ###########################################################################
     
@@ -103,7 +106,7 @@ def inputFreeWind(dict_data,Param):
         for n in range(Param.stages): 
             for k in range(scenarios): 
                 for j in range(len(blocksData[0])): 
-                    sum_p = [0]*Param.w_free_samples
+                    sum_p = [0]*Param.dist_samples
                     for i in range(len(ene_area)):
                         sum_p = [sum(x) for x in zip(sum_p, ene_area[i][n][k][j])]
                     

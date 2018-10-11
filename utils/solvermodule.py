@@ -1,28 +1,35 @@
 
-def backseq(scenarios,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy):
+def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy):
 
 #    import cProfile, pstats, io
 #    #from pstats import SortKey
 #    pr = cProfile.Profile()
 #    pr.enable()
     
+    import pickle
     #from objbrowser import browse
     #from pyomo.util.timing import report_timing
-
+    
     hydroPlants = dict_data['hydroPlants']
     batteries = dict_data['batteries']
     volData = dict_data['volData']
-    numareas = dict_data['numAreas']
+    numAreas = dict_data['numAreas']
     numBlocks = dict_format['numBlocks']
     df_inflow = dict_format['inflow_hydro']
-    df_windenergy = dict_windenergy['windenergy_area']
     
+    if Param.dist_free is True:
+        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+        numPleps = dict_pleps['plepcount']
+        residual = dict_pleps['p_points']
+    else:
+        df_windenergy = dict_windenergy['windenergy_area']
+        
     # save data
     objective_list = []; total_obj = 0
     duals_batt = [[] for x in range(len(batteries))]
     duals = [[] for x in range(len(hydroPlants))]
 
-    for k in range(scenarios):
+    for k in range(Param.seriesBack):
 
         # Modifying input file: coefficient phi and constant delta; initial state; storage unit limits
 
@@ -31,10 +38,19 @@ def backseq(scenarios,i,dict_data,dict_format,model,opt,none1,none2,dict_windene
 
         for z in range(len(hydroPlants)):
             model.inflows[hydroPlants[z]] = InflowsHydro[z]
-        for z in range(numareas):
-            for y in range(numBlocks):
-                model.meanWind[z+1,y+1] = df_windenergy[z][i-1][k][y]
-
+        
+        if Param.dist_free is True:
+            # update rationing cost and demand values by stage
+            for area1 in range(numAreas):
+                for y in range(numBlocks):
+                    for plp in range(numPleps):
+                        model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
+        else:
+            # wind energy
+            for z in range(numAreas):
+                for y in range(numBlocks):
+                    model.meanWind[z+1,y+1] = df_windenergy[z][i-1][k][y]
+            
         # Reconstruct the instance and solve
         #model.ctVol.reconstruct(); model.ctGenW.reconstruct()
 

@@ -21,7 +21,7 @@ def paramlimits(Param):
 
 def valmodel(Param):
     
-    if Param.wind_freeD is True and Param.wind_model2 is True:
+    if Param.dist_free is True and Param.wind_model2 is True:
         sys.exit('The parameters (Class Parameters) "wind_freeD" and "wind_model2" are True at the same time. You need to choose one model.')
 
     if Param.flow_gates is True or Param.parallel is True or Param.wind_model2 is True:
@@ -30,3 +30,7 @@ def valmodel(Param):
 def areavalidation(area,substring):
     
     sys.exit('Area or node "' +str(area) + '" does not exist or it is inactive - sheet '+substring)
+    
+def scenariosvalidation(scenarios,scenariosSim):
+    if scenariosSim > scenarios:
+        sys.exit('Simulation parameter exceeds data, '+str(scenariosSim)+' scenarios vs '+str(scenarios)+' in data.')

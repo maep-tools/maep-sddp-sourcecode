@@ -5,6 +5,8 @@ def inputwindSet(dict_data,Param):
     
     from utils.input_wind import inputwind
     
+    numAreas = dict_data['numAreas']
+    
     if Param.wind_model2 is True:
             
         windRPlants = dict_data['windRPlants']
@@ -12,8 +14,8 @@ def inputwindSet(dict_data,Param):
         inflowRealData = dict_data['inflowRealData']
         indcStage = 11; indcArea = 12
         
-        inputwind(indcStage,indcArea,windRPlants,windRData,[[]],inflowRealData,dict_data,
-                  Param,1)
+        inputwind(indcStage,indcArea,windRPlants,windRData,[[]],inflowRealData,numAreas,
+                  Param.stages,1)
         
     else:
             
@@ -24,19 +26,19 @@ def inputwindSet(dict_data,Param):
         indcStage = 6; indcArea = 8
         
         inputwind(indcStage,indcArea,windPlants,windData,expWindData,inflowWindData,
-                  dict_data,Param.stages,0)
+                  numAreas,Param.stages,0)
  
 ###############################################################################
         
 def inputwind(indcStage,indcArea,windPlants,windData,expWindData,inflowWindData,
-              dict_data,stages,var):
+              numAreas,stages,var):
+    
+    import numpy as np
     
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
     
     scenarios = dict_sim['scenarios']
     yearvector = dict_sim['yearvector']
-    
-    numAreas = dict_data['numAreas']
     
     speed_wind = [[[] for _ in range(2) ] for _ in range(len(windPlants))]
     
@@ -73,7 +75,6 @@ def inputwind(indcStage,indcArea,windPlants,windData,expWindData,inflowWindData,
     
     # Wind speed
     totscenarios = max(inflowWindData[1][1:])
-    import numpy as np
     for i in range(stages):
         # Series Wind
         for k in range(2,2+len(windPlants)):

@@ -28,28 +28,34 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
     
         # Creating fixed input files '''
         from utils.input_data import inputdata
-        inputdata(dict_data, Param.sensDem)
+        inputdata(dict_data, Param)
     
         from utils.input_hydro import inputhydro
         inputhydro(dict_data)
-    
+        
+        # wind speed data
         from utils.input_wind import inputwindSet
         inputwindSet(dict_data, Param)
+        
+        # solar radiation data
+        from utils.input_solar import inputsolar
+        inputsolar(dict_data, Param.stages)
         
         if Param.wind_model2 is True:
 
             from utils.input_wind import energyRealWind
             energyRealWind(dict_data,Param.seriesBack,Param.stages)
 
-        elif Param.wind_freeD is True:
+        elif Param.dist_free is True:
             
-            from utils.input_wind_free import inputFreeWind
-            #from utils.input_solar_free import inputFreeSolarD, inputFreeSolarB
+            from utils.input_wind_DF import inputDFWind
+            from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
             from utils.residualload import aggr_energy
+            
             print('p-Efficient Points calculation ...')
-            inputFreeWind(dict_data, Param)
-            #inputFreeSolarD(dict_data, Param)
-            #inputFreeSolarB(dict_data, Param)
+            inputDFWind(dict_data, Param)
+            inputDFSolarL(dict_data, Param)
+            inputDFSolarD(dict_data, Param)
             aggr_energy(dict_data, Param)
             
         else:
@@ -59,7 +65,10 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
         
         from utils.input_others import inputbatteries, inputlines
         inputbatteries(dict_data, Param.stages)
-        inputlines(dict_data, Param.stages)
+        inputlines(Param, dict_data)
+        
+        #from utils.input_biomass import inputbiomass
+        #inputbiomass(dict_data)
     
 def grid(param_opf, stages):
     

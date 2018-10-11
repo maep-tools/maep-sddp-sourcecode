@@ -7,6 +7,11 @@ def data(confidence, Param, iteration, fcf_Operator):
     from pyomo.opt import SolverFactory
     from pyomo.core import Suffix
     from utils.parameters import pyomoset, pyomohydro, pyomogates
+    from scripts.pyomo_model import obj_function
+    from scripts.pyomo_model import load_balance
+    from scripts.pyomo_model import energy_conservationF as energy_conservation
+    from scripts.pyomo_model import storage_function, costtogo
+    from scripts.pyomo_model import variables
     from utils.saveresults import saveiter
     from utils import solver
     import progressbar
@@ -77,7 +82,8 @@ def data(confidence, Param, iteration, fcf_Operator):
     lvlHydro = [[[[] for z in hydroPlants] for x in lenstg] for y in lensc]
     spillHydro = [[[[[] for bl in lenblk] for z in hydroPlants] for x in lenstg] for y in lensc]
     linTransfer = [[[[[] for a in range(numAreas)] for z in range(numAreas)] for x in lenstg] for y in lensc]
-
+    genRnws = [[[[[] for bl in lenblk] for z in range(numAreas)] for x in lenstg] for y in lensc]
+    
     # Define solver
     opt = solver.gurobi_solver(SolverFactory)
     #opt = solver.glpk_solver(SolverFactory)
@@ -227,70 +233,32 @@ def data(confidence, Param, iteration, fcf_Operator):
     model.maxlvlB = pyomo.Param(model.Batteries, mutable=True)
     # bounds (max) on capacity of lines
     model.lineLimit = pyomo.Param(model.Circuits, model.Blocks, mutable=True)
-
-    # reservoirs limits
-    def boundVolH(model, h):
-        return (model.minVolH[h], model.maxVolH[h])
-    # batteries storage limits
-    def boundlvlB(model, r):
-        return (model.minlvlB[r], model.maxlvlB[r])
-    def boundlvlBlock(model, r, b):
-        return (0, model.maxlvlB[r])
-    # thermal production
-    def boundProdT(model, t, b):
-        return (model.minGenT[t, b], model.maxGenT[t, b])
-    # small production
-    def boundProdS(model, m, b):
-        return (model.minGenS[m, b], model.maxGenS[m, b])
-    # hydro production
-    def boundProdH(model, h, b):
-        return (0, model.maxGenH[h, b])
-    # batteries production
-    def boundProdB(model, r, b):
-        return (0, model.maxGenB[r, b])
-    # wind area production
-    def boundProdW(model, a, b):
-        return (0, model.maxGenW[a, b])
-    # lines limits
-    def boundLines(model, l, b):
-        return (0, model.lineLimit[l, b])
-    # lines limits
-    def boundDeficit(model, a, b):
-        return (0, model.demand[a, b])
     
-    # DECISION VARIABLES
-    # thermal production
-    model.prodT = pyomo.Var(model.Thermal, model.Blocks, bounds=boundProdT)
-    # small production
-    model.prodS = pyomo.Var(model.Small, model.Blocks, bounds=boundProdS)
-    # hydro production
-    model.prodH = pyomo.Var(model.Hydro, model.Blocks, bounds=boundProdH)
-    # wind power production
-    model.prodW = pyomo.Var(model.AreasRnw, model.Blocks, bounds=boundProdW)
-    # Battery production
-    model.prodB = pyomo.Var(model.Batteries, model.Blocks, bounds=boundProdB)
-    # battery charge
-    model.chargeB = pyomo.Var(model.Batteries, model.Blocks, bounds=boundProdB)
-    # lines transfer limits
-    model.line = pyomo.Var(model.Circuits, model.Blocks, bounds=boundLines)
-    # spilled outflow of hydro plant
-    model.spillH = pyomo.Var(model.Hydro, model.Blocks, domain=pyomo.NonNegativeReals)
-    # energy non supplied
-    model.deficit = pyomo.Var(model.Areas, model.Blocks, bounds=boundDeficit)
-    # energy in nodes - balance
-    model.balance = pyomo.Var(model.Areas, model.Blocks)
-    # final volume
-    model.vol = pyomo.Var(model.Hydro, bounds=boundVolH)
-    # final battery level
-    model.lvl = pyomo.Var(model.Batteries, bounds=boundlvlB)
-    # future cost funtion value
-    model.futureCost = pyomo.Var(domain=pyomo.NonNegativeReals)
-    # spilled outflow of hydro plant
-    model.spillW = pyomo.Var(model.Areas, model.Blocks, domain=pyomo.NonNegativeReals)
-    # limit of storage at each block
-    model.lvlBlk = pyomo.Var(model.Batteries, model.Blocks, bounds=boundlvlBlock)
-
+    ###########################################################################
+    
+    # Bounds and DECISION VARIABLES
+    variables(model, pyomo)
+    
+    ###########################################################################
+    
     # conditional constraints
+    
+    if Param.dist_free is True:
+        
+        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+        residual = dict_pleps['p_points']
+        
+        numPleps = dict_pleps['plepcount']
+        model.plepNum = pyomo.Set(initialize= list(range(1, numPleps+1)))
+        
+        # coeficient pleps variables
+        model.factorPlep = pyomo.Var(model.Areas, model.Blocks, model.plepNum, domain=pyomo.NonNegativeReals)
+        # aggregated renewables production
+        model.RnwLoad = pyomo.Var(model.Areas, model.Blocks)
+        
+        # p_efficient points
+        model.plep = pyomo.Param(model.Areas, model.Blocks, model.plepNum, mutable=True)
+        
     if Param.param_opf is True:
         dict_intensity = pickle.load(open("savedata/matrixbeta_save.p", "rb"))
         
@@ -334,126 +302,24 @@ def data(confidence, Param, iteration, fcf_Operator):
         # cost of CO2 emissions
         model.co2cost = pyomo.Param(mutable=True)
         
-        
-    # OBJ FUNCTION
-    # total cost of thermal production
-    if Param.emissions is True:
-        # Consideration of CO2 emissions
-        def obj_expr(model):
-            return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
-                    sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
-                    sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
-                    model.futureCost +
-                    # emissions
-                    model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
-                    sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
-                    sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks) )
-                    )
-        # Objective function
-        model.OBJ = pyomo.Objective(rule=obj_expr)
+    ################### Optimization model ####################################
     
-    else:
-        # Standard formulation
-        def obj_expr(model):
-            return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
-                    sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
-                    sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
-                    model.futureCost)
-        # Objective function
-        model.OBJ = pyomo.Objective(rule=obj_expr)
-        
+    # OBJ FUNCTION
+    obj_function(Param, model, pyomo)
+    
     # CONSTRAINTS
     # define constraint: demand must be served in each block and stage
-    if Param.param_opf is True:
-        def ctDemand(model, area, b):
-            return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
-                    sum(model.prodS[m, b] for m in model.SmallArea[area]) +
-                    sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                    sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                    sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
-                    model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
-        # add constraint to model according to indices
-        model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-        
-        # energy balace in nodes
-        def ctBalance(model, area, b):
-            return (sum(model.line[l, b] for l in model.linesAreaOut[area]) - 
-                    sum(model.line[l, b] for l in model.linesAreaIn[area])  ==
-                    model.balance[area,b])
-        model.ctBalace = pyomo.Constraint(model.Areas, model.Blocks, rule=ctBalance)
-        
-        # define opf constraints
-        def ctOpf(model, ct, b):
-            return( -model.lineLimit[ct,b] <= sum(model.balance[area,b] * model.flines[ct, area]
-                    for area in model.Areas if (ct, area) in model.linebus) <= model.lineLimit[ct,b])
-        # add constraint to model according to indices
-        model.ctOpf = pyomo.Constraint(model.Circuits, model.Blocks, rule=ctOpf)
+    load_balance(Param, model, pyomo)
     
-    else:
-        def ctDemand(model, area, b):
-            return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
-                    sum(model.prodS[m, b] for m in model.SmallArea[area]) +
-                    sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                    sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                    sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
-                    sum(model.line[l, b] for l in model.linesAreaOut[area]) -
-                    sum(model.line[l, b] for l in model.linesAreaIn[area]) +
-                    model.deficit[area, b] >= model.demand[area, b])
-        # add constraint to model according to indices
-        model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-    
-    # define constraint: volume conservation
-    def ctVol(model, h) :
-        return (model.iniVol[h] + model.inflows[h] -
-                sum(model.prodH[h, b] for b in model.Blocks) -
-                sum(model.spillH[h, b] for b in model.Blocks) +
-                sum(sum(model.prodH[hup, b] for b in model.Blocks) for hup in model.Hydro if (hup, h) in model.TurbiningArcs) +
-                sum(sum(model.spillH[sup, b] for b in model.Blocks) for sup in model.Hydro if (sup, h) in model.SpillArcs) ==
-                model.vol[h] )
-    # add constraint to model according to indices
-    model.ctVol = pyomo.Constraint(model.Hydro, rule=ctVol)
-
-    # energy conservation by block
-    def ctLvlBlk(model, r, b):
-        return (model.iniLvlBlk[r, b] + model.chargeB[r, b]*model.factorB[r] -
-                model.prodB[r, b]/model.factorB[r] == model.lvlBlk[r, b])
-    # add constraint to model according to indices
-    model.ctLvlBlk = pyomo.Constraint(model.Batteries, model.Blocks, rule=ctLvlBlk)
-
-    # energy conservation by stage
-    def ctLvl(model, r):
-        return (model.iniLvl[r] +
-                sum(model.chargeB[r, b]*model.factorB[r] for b in model.Blocks) -
-                sum(model.prodB[r, b]/(model.factorB[r]) for b in model.Blocks) == model.lvl[r])
-    # add constraint to model according to indices
-    model.ctLvl = pyomo.Constraint(model.Batteries, rule=ctLvl)
+    # define constraint: energy conservation
+    energy_conservation(model, pyomo)
 
     # define constraint: Wind production conservation
-    def ctGenW(model, area, b) :
-        return (sum( model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                model.spillW[area, b] + model.prodW[area, b] == model.meanWind[area, b])
-    # add constraint to model according to indices
-    model.ctGenW = pyomo.Constraint(model.AreasRnw, model.Blocks, rule=ctGenW)
+    storage_function(Param, model, pyomo)
 
     # define constraint: future cost funtion
-    def ctFcf(model, c) :
-        return (sum((model.coefcTerm[h, c] * model.vol[h]) for h in model.resHydro) +
-                sum((model.coefcBatt[r, c] * model.lvl[r]) for r in model.Batteries) +
-                model.constTerm[c]  <= model.futureCost)
-    # add constraint to model according to indices
-    model.ctFcf = pyomo.Constraint(model.Cuts, rule=ctFcf)
+    costtogo(Param, model, pyomo)
 
-    # flowgates constraints
-    if Param.flow_gates is True:
-        # define gate constraints
-        def ctGates(model, gate, b):
-            return( -model.gateLimt[gate,b] <=
-                    sum(sum(model.balance[area,b] * model.flines[l, area] for area in model.Areas if (l, area) in model.linebus) 
-                            for (gt,l,area) in model.gateLines if gt == gate) <= 
-                    model.gateLimt[gate,b])
-        # add constraint to model according to indices
-        model.ctGates = pyomo.Constraint(model.Gates, model.Blocks, rule=ctGates)
-        
     # Creating instance
     model.dual = Suffix(direction=Suffix.IMPORT)
 
@@ -513,13 +379,25 @@ def data(confidence, Param, iteration, fcf_Operator):
             
             for y in range(numAreas):
                 model.rationing[y+1] = dd_rationing[y][s]
-                    
+            
+            
+            if Param.dist_free is True:
+                # update rationing cost and demand values by stage
+                for area1 in range(numAreas):
+                    for y in lenblk:
+                        for plp in range(numPleps):
+                            model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
+            else:
+                # wind energy
+                for z in lenblk:
+                    for y in range(numAreas):
+                        model.meanWind[y+1,z+1] = dict_windenergy['windenergy_area'][y][s][k][z]
+
             for z in lenblk:
                 for y in range(numAreas):
-                    model.meanWind[y+1,z+1] = dict_windenergy['windenergy_area'][y][s][k][z]
                     model.demand[y+1,z+1] = df_demand[y][s][z]
                     model.maxGenW[y+1,z+1] = dict_wind['hat_area'][y][s]*blocksData[0][z]
-
+                        
             # Update the generation cost
             for i, plant in enumerate(thermalPlants):
                 model.cost[plant] = df_opcost[i][s]
@@ -561,8 +439,8 @@ def data(confidence, Param, iteration, fcf_Operator):
 
             # solver
             opt.solve(model)#, symbolic_solver_labels=False) #, tee=True)
-            with open('pyomo_model.txt', 'w') as f:
-                model.pprint(ostream=f)
+            #with open('pyomo_model.txt', 'w') as f:
+            #    model.pprint(ostream=f)
             # instance.display()
 
             # objective function value
@@ -606,13 +484,11 @@ def data(confidence, Param, iteration, fcf_Operator):
             if ((iteration + 1 == Param.max_iter or confidence == 1) and Param.results is True):
 
                 (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
-                lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emsscurve) = saveiter(k,
-                s,lenblk,thermalPlants,model,model.prodT,genThermal,model.prodH,model.prodB,
-                model.deficit,model.chargeB,model.lvl,model.vol,hydroPlants,batteries,
-                genHydro,genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,
-                numAreas,linTransfer,model.line,circuits,spillHydro,model.spillH,genwind,
-                model.prodW,model.spillW,spillwind,genSmall,smallPlants,model.prodS,rnwArea,
-                Param,emissCurve)
+                lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emsscurve,genRnws) = saveiter(k,
+                s,lenblk,thermalPlants,model,genThermal,hydroPlants,batteries,genHydro,
+                genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,numAreas,
+                linTransfer,circuits,spillHydro,genwind,spillwind,genSmall,smallPlants,
+                rnwArea,Param,emissCurve,genRnws)
 
             # progress of the analysis
             bar.update(count+1)
@@ -639,7 +515,7 @@ def data(confidence, Param, iteration, fcf_Operator):
         "genBatteries":genBatteries,"genDeficit":genDeficit,"loadBatteries":loadBatteries,
         "lvlBatteries":lvlBatteries,"lvlHydro":lvlHydro,"linTransfer":linTransfer,
         "spillHydro":spillHydro,"genwind":genwind,"spillwind":spillwind,"marg_costs":marg_costs,
-        "emsscurve":emsscurve}
+        "emsscurve":emsscurve,"genRnws":genRnws}
 
         pickle.dump(DataDictionary, open( "savedata/results_save.p", "wb" ) )
 
