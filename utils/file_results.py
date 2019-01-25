@@ -70,10 +70,11 @@ def xlsfile(Param):
     ws0['A4'] = 'Blocks'; ws0['B4'] = numBlocks
     ws0['A5'] = 'Areas'; ws0['B5'] = numAreas
     ws0['A6'] = 'Hydro plants'; ws0['B6'] = len(hydroPlants)
-    ws0['A7'] = 'Thermal plants'; ws0['B7'] = len(thermalPlants)
-    ws0['A8'] = 'Wind plants'; ws0['B8'] = len(windPlants)
-    ws0['A9'] = 'Batteries'; ws0['B9'] = len(batteries)
-    ws0['A10'] = 'LinksAreas'; ws0['B10'] = len(linesData)
+    ws0['A7'] = 'Small plants'; ws0['B7'] = len(thermalPlants)
+    ws0['A8'] = 'Thermal plants'; ws0['B8'] = len(smallPlants)
+    ws0['A9'] = 'Wind plants'; ws0['B9'] = len(windPlants)
+    ws0['A10'] = 'Batteries'; ws0['B10'] = len(batteries)
+    ws0['A11'] = 'LinksAreas'; ws0['B11'] = len(linesData)
 
     ###########################################################################
 
@@ -297,6 +298,10 @@ def xlsfile(Param):
                 valueC = 0
                 for x in range(numBlocks):
                     valueC2 = sum(marg_costs[k][j][i][x])
+                    if Param.dist_free is True:
+                        valueC2 = - sum(marg_costs[k][j][i][x])
+                    else:
+                        valueC2 = sum(marg_costs[k][j][i][x])
                     if valueC2 > valueC:
                         valueC = valueC2
 
@@ -378,6 +383,14 @@ def xlsfile(Param):
 
     ws4['B4'] = 'block'; ws4['A4'] = 'Stage'
 
+    genBBlockFinal = [[0]*numBlocks for x in range(stages)]
+    for i in range(scenarios):
+        for j in range(stages):
+            for k in range(plants):
+                for x in range(numBlocks):
+                    genBBlockFinal[j][x] += genBatteries[i][j][k][x]
+    
+
     ###########################################################################
 
     ws5 = wb.create_sheet(title="Deficit")
@@ -449,12 +462,16 @@ def xlsfile(Param):
     ws8['A4'] = 'Stage'
 
     ws7 = wb.create_sheet(title="LoadBatt")
-
+    
+    genBdisFinal = [[[[] for y in range(scenarios) ] for z in range(plants) ] for x in range(stages)]
     plants = len(batteries)
     for i in range(scenarios):
         for j in range(stages):
             for k in range(plants):
+                valueBdis = 0
                 for x in range(numBlocks):
+                    valueBdis += loadBatteries[i][j][k][x]
+                    
                     _ = ws7.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
                                  row=4+(j+1)*numBlocks-numBlocks+(x+1), value=loadBatteries[i][j][k][x])
                     _ = ws7.cell(column=2,
@@ -467,8 +484,17 @@ def xlsfile(Param):
                                  row=3, value='Area:'+str(int(battData[9][k])) )
                     _ = ws7.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
                                  row=4, value='Scenario:'+str(i+1) )
+                genBdisFinal[j][k][i] = valueBdis
+                
     ws7['B4'] = 'block'; ws7['A4'] = 'Stage'
 
+    genBdisBlockFinal = [[0]*numBlocks for x in range(stages)]
+    for i in range(scenarios):
+        for j in range(stages):
+            for k in range(plants):
+                for x in range(numBlocks):
+                    genBdisBlockFinal[j][x] += loadBatteries[i][j][k][x]
+                    
     ###########################################################################
     if numAreas is not 1:
 
@@ -556,30 +582,32 @@ def xlsfile(Param):
     # Renewables generation by areas
     genRnFinal = [[[[] for y in range(scenarios) ] for z in range(numAreas) ] for x in range(stages)]
     
-    ws10_4 = wb.create_sheet(title="RnwsGen")
-
-    for i in range(scenarios):
-        for j in range(stages):
-           for k in range(numAreas):
-                valueRn = 0
-                for x in range(numBlocks):
-
-                    valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
-
-                    _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1),
-                                 value = df_demand[k][j][x] - genRnws[i][j][k][x])
-                    _ = ws10_4.cell(column = 2,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
-                    _ = ws10_4.cell(column=1,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
-                    _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=2, value='Area: '+areasData[0][k])
-                    _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=3, value='Scenario:'+str(i+1) )
-                genRnFinal[j][k][i] = valueRn
-
-    ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
+    if Param.dist_free is True:
+        
+        ws10_4 = wb.create_sheet(title="RnwsGen")
+    
+        for i in range(scenarios):
+            for j in range(stages):
+               for k in range(numAreas):
+                    valueRn = 0
+                    for x in range(numBlocks):
+    
+                        valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
+    
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1),
+                                     value = df_demand[k][j][x] - genRnws[i][j][k][x])
+                        _ = ws10_4.cell(column = 2,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
+                        _ = ws10_4.cell(column=1,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=2, value='Area: '+areasData[0][k])
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=3, value='Scenario:'+str(i+1) )
+                    genRnFinal[j][k][i] = valueRn
+    
+        ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
     
     ###########################################################################
 
@@ -602,6 +630,8 @@ def xlsfile(Param):
 
     datasol = {"genHFinal":genHFinal,"genTFinal":genTFinal,"genWFinal":genWFinal,
                "genDFinal":genDFinal,"genBFinal":genBFinal,"genMFinal":genMFinal,
-               "genSFinal":genSFinal,"emssiFinal":emssiFinal,"genRnFinal":genRnFinal}
+               "genSFinal":genSFinal,"emssiFinal":emssiFinal,"genRnFinal":genRnFinal,
+               "genBdisFinal":genBdisFinal,"genBBlockFinal":genBBlockFinal,
+               "genBdisBlockFinal":genBdisBlockFinal}
 
     pickle.dump(datasol, open( "savedata/html_save.p", "wb" ) )

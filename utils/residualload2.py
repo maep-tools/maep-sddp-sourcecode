@@ -71,8 +71,8 @@ def aggr_energy(dict_data, Param):
             for area in range(len(RnwArea)):
                 for j in range(len(blocksData[0])):
                     # residual load
-                    load = 1e6 * df_demand[RnwArea[area] -1][n][j]
-                    res_load = [int((load-x)/1e3) for x in power_area_energy[area][n][k][j]]
+                    #load = 1e6 * df_demand[RnwArea[area] -1][n][j]
+                    res_load = [x/1e3 for x in power_area_energy[area][n][k][j]]
                     sc_st_vec.append(res_load)
                     #sc_st_vec.append(power_area_energy[area][n][k][j])
             

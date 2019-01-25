@@ -103,8 +103,8 @@ def optimization(Param):
     
     #start = timeit.default_timer()
     
-    from scripts import forward
-    from scripts import backward
+    from scripts import forward as forward
+    from scripts import backward as backward
     from scripts import optimality
     
     # Load the dictionary back from the pickle file
@@ -183,9 +183,9 @@ def optimization(Param):
                     printresults(Param, sol_scn)
             
             # partial results
-            print(sum(sol_costs[2])/Param.seriesForw)
-            #print([max(sol_costs[2]),min(sol_costs[2]),numpy.std(sol_costs[2])])
-            #print(sol_costs[2])
+            # print(sum(sol_costs[2])/Param.seriesForw)
+            # print([max(sol_costs[2]),min(sol_costs[2]),numpy.std(sol_costs[2])])
+            # print(sol_costs[2])
     
     elif Param.policy is False and Param.simulation is True:
     

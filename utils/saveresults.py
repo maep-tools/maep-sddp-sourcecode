@@ -15,7 +15,6 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
     for gen_S in [instance.prodS]: Sobject = getattr(instance, str(gen_S))
     for gen_H in [instance.prodH]: Hobject = getattr(instance, str(gen_H))
     for gen_W in [instance.prodW]: Wobject = getattr(instance, str(gen_W))
-    for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
     for spl_W in [instance.spillW]: sWobject = getattr(instance, str(spl_W))
     for gen_B in [instance.prodB]: Bobject = getattr(instance, str(gen_B))
     for gen_D in [instance.deficit]: Dobject = getattr(instance, str(gen_D))
@@ -50,6 +49,8 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
 
     if Param.dist_free is True:
         
+        for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
+    
         for i in range(numAreas):
             for j in lenblk:
                 genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
@@ -85,8 +86,10 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
 
 def printresults(Param,sol_scn):
 
-    from reports_utils.dispatch import gendispatch
+    from reports_utils.dispatch import gendispatch, genrenewables
+    from reports_utils.batteries_report import chargedis
     from reports_utils.curves_report import marginalcost
+    from reports_utils.hydroscenarios import hydrogen
     from utils.file_results import xlsfile
 
     # write results
@@ -97,3 +100,13 @@ def printresults(Param,sol_scn):
 
     # marginal costs
     if Param.curves[1] is True: marginalcost(Param)
+    
+    # hydro generation
+    if Param.curves[2][0] is True: hydrogen(Param)
+    
+    # renewables generation
+    if Param.curves[3] is True: genrenewables(Param)
+    
+    # storage behaviour
+    if Param.curves[4][0] is True: chargedis(Param)
+    

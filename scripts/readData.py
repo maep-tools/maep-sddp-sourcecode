@@ -575,10 +575,10 @@ def data_file(Param, file):
     # Wind speed indices
     indicesData = []
     substring = "SpeedIndices"
-    mtx_Data = mtxinflow(substring,tabnames,importedfile)
+    mtx_DataIn = mtxinflow(substring,tabnames,importedfile)
     
     for z in range(len(activesW)):
-        indicesData.append(mtx_Data[activesW[z]+2])
+        indicesData.append(mtx_DataIn[activesW[z]+2])
         
     # wind expansion
     substring = "Wind_expn"

@@ -13,6 +13,7 @@ def gendispatch(Param):
     genWFinal = dict_charts['genWFinal']
     genDFinal = dict_charts['genDFinal']
     genBFinal = dict_charts['genBFinal']
+    genRnFinal = dict_charts['genRnFinal']
     horizon = dict_data["horizon"]
     areasname = dict_data["areasData"][0]
     numAreas = dict_data["numAreas"]
@@ -35,13 +36,21 @@ def gendispatch(Param):
     dict_fig ={}
     for z in range(numAreas):
         
-        y0_org = []
-        for j in range(stages):
-            val_scn = 0
-            for i in range(scenarios):
-                val_scn += genWFinal[j][z][i]
-            y0_org.append(val_scn/scenarios)
-        
+        if Param.dist_free is True:
+            y0_org = []
+            for j in range(stages):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genRnFinal[j][z][i]
+                y0_org.append(val_scn/scenarios)
+        else:
+            y0_org = []
+            for j in range(stages):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genWFinal[j][z][i]
+                y0_org.append(val_scn/scenarios)
+            
         y1_org = []
         for j in range(stages):
             val_stg = 0
@@ -109,17 +118,31 @@ def gendispatch(Param):
         y4_txt=[str("{0:.2f}".format(y4/1000))+' GWh' for y4 in y4_org]
         y5_txt=[str("{0:.2f}".format(y5/1000))+' GWh' for y5 in y5_org]
         
-        Wind = go.Scatter(
-            x=x,
-            y=y0_stck,
-            text=y0_txt,
-            hoverinfo='x+text',
-            mode='lines',
-            line=dict(width=0.5,
-                      color='rgb(224,243,248)'),
-            fill='tonexty',
-            name='Wind'
-        )
+        if Param.dist_free is True:
+            Wind = go.Scatter(
+                x=x,
+                y=y0_stck,
+                text=y0_txt,
+                hoverinfo='x+text',
+                mode='lines',
+                line=dict(width=0.5,
+                          color='rgb(224,243,248)'),
+                fill='tonexty',
+                name='Renewables'
+            )
+        else:
+            Wind = go.Scatter(
+                x=x,
+                y=y0_stck,
+                text=y0_txt,
+                hoverinfo='x+text',
+                mode='lines',
+                line=dict(width=0.5,
+                          color='rgb(224,243,248)'),
+                fill='tonexty',
+                name='Wind'
+            )
+                
         Batteries = go.Scatter(
             x=x,
             y=y1_stck,
@@ -208,16 +231,27 @@ def gendispatch(Param):
     ###########################################################################
     
     # each areas dispatch
-    y0_org = []
-    for j in range(stages):
-        val_stg = 0
-        for k in range(len(genWFinal[j])):
-            val_scn = 0
-            for i in range(scenarios):
-                val_scn += genWFinal[j][k][i]
-            val_stg += val_scn/scenarios
-        y0_org.append(val_stg)
-    
+    if Param.dist_free is True:
+        y0_org = []
+        for j in range(stages):
+            val_stg = 0
+            for k in range(len(genRnFinal[j])):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genRnFinal[j][k][i]
+                val_stg += val_scn/scenarios
+            y0_org.append(val_stg)
+    else:
+        y0_org = []
+        for j in range(stages):
+            val_stg = 0
+            for k in range(len(genWFinal[j])):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genWFinal[j][k][i]
+                val_stg += val_scn/scenarios
+            y0_org.append(val_stg)
+            
     y1_org = []
     for j in range(stages):
         val_stg = 0
@@ -284,17 +318,31 @@ def gendispatch(Param):
     y4_txt=[str("{0:.2f}".format(y4/1000))+' GWh' for y4 in y4_org]
     y5_txt=[str("{0:.2f}".format(y5/1000))+' GWh' for y5 in y5_org]
     
-    Wind = go.Scatter(
-        x=x,
-        y=y0_stck,
-        text=y0_txt,
-        hoverinfo='x+text',
-        mode='lines',
-        line=dict(width=0.5,
-                  color='rgb(224,243,248)'),
-        fill='tonexty',
-        name='Wind'
-    )
+    if Param.dist_free is True:
+        Wind = go.Scatter(
+            x=x,
+            y=y0_stck,
+            text=y0_txt,
+            hoverinfo='x+text',
+            mode='lines',
+            line=dict(width=0.5,
+                      color='rgb(224,243,248)'),
+            fill='tonexty',
+            name='Wind'
+        )
+    else:
+        Wind = go.Scatter(
+            x=x,
+            y=y0_stck,
+            text=y0_txt,
+            hoverinfo='x+text',
+            mode='lines',
+            line=dict(width=0.5,
+                      color='rgb(224,243,248)'),
+            fill='tonexty',
+            name='Renewables'
+        )
+            
     Batteries = go.Scatter(
         x=x,
         y=y1_stck,
@@ -419,3 +467,101 @@ def gendispatch(Param):
     Html_file= open("results/areasdispatch_report.html","w")
     Html_file.write(html_out)
     Html_file.close()
+
+    ###########################################################################
+
+def genrenewables(Param): 
+    
+    import pickle
+    dict_charts = pickle.load( open( "savedata/html_save.p", "rb" ) )
+    dict_data = pickle.load( open( "savedata/data_save.p", "rb" ) )
+    
+    # plor format
+    dict_fig ={}
+    
+    import plotly
+    import plotly.graph_objs as go
+
+    genWFinal = dict_charts['genWFinal']
+    genRnFinal = dict_charts['genRnFinal']
+    horizon = dict_data["horizon"]
+    
+    scenarios = Param.seriesForw
+    stages = Param.stages-Param.bnd_stages
+    
+    import datetime
+    axisfixlow = horizon[0] + datetime.timedelta(hours = -360)
+    axisfixhig = horizon[stages-1] + datetime.timedelta(hours = 360)
+    x=horizon #list(range(1,stages+1))
+    
+    ###########################################################################
+    
+    # all areas dispatch
+    if Param.dist_free is True:
+        y0_org = []
+        for j in range(stages):
+            val_stg = 0
+            for k in range(len(genRnFinal[j])):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genRnFinal[j][k][i]
+                val_stg += val_scn/scenarios
+            y0_org.append(val_stg)
+        
+    else:
+        y0_org = []
+        for j in range(stages):
+            val_stg = 0
+            for k in range(len(genWFinal[j])):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genWFinal[j][k][i]
+                val_stg += val_scn/scenarios
+            y0_org.append(val_stg)
+    
+    
+    # Create traces
+    trace = go.Scatter(
+            x = x[:30],
+            y = y0_org[:],
+            mode = 'lines',
+            name = 'renewables dispatch'
+        )
+            
+    data = [trace]
+    layout = go.Layout(
+    autosize=False,
+    width=800,
+    height=500,
+    #title='Double Y Axis Example',
+    yaxis=dict(title='Energy [MWh]',
+               titlefont=dict(
+                       family='Arial, sans-serif',
+                       size=18,
+                       color='darkgrey'),
+               #tickformat = ".0f"
+               exponentformat = "e",
+               #showexponent = "none",
+               ticks = "inside"
+               ),
+    xaxis=dict(range=[axisfixlow,axisfixhig])
+    )
+    fig = go.Figure(data=data, layout=layout)
+    dict_fig["aggr"] = plotly.offline.plot(fig, output_type = 'div')
+    
+    from jinja2 import Environment, FileSystemLoader
+    
+    env = Environment(loader=FileSystemLoader('.'))
+    template = env.get_template("templates/renewables_report.html")
+    
+    template_vars = {"title" : "Report",
+                     "data1": "Renewables dispatch",
+                     "div_placeholder1A": dict_fig["aggr"]
+                     }
+    
+    html_out = template.render(template_vars)
+    
+    Html_file= open("results/report_variables/renewables_report.html","w")
+    Html_file.write(html_out)
+    Html_file.close()
+    

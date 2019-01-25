@@ -3,11 +3,11 @@ def fisrt_vec(weightvec2,probvec,eps_all):
     import pyomo.environ as pyomo
     from pyomo.opt import SolverFactory
 
-    #opt = SolverFactory('gurobi', solver_io='python')
+    opt = SolverFactory('gurobi', solver_io='python')
     #opt = SolverFactory('gurobi')
     #opt = SolverFactory('cplex',solver_io='python')
     #opt = SolverFactory('cplex')
-    opt = SolverFactory('cplex',solver_io='nl')
+    #opt = SolverFactory('cplex',solver_io='nl')
     
     model = pyomo.ConcreteModel()
 

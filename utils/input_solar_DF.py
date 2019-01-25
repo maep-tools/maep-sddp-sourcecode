@@ -136,14 +136,14 @@ def inputDFSolarL(dict_data,Param):
     
 def inputDFSolarD(dict_data,Param):
     
-    dict_solarL = pickle.load( open( "savedata/solar_large_save.p", "rb" ) )
+    dict_solarD = pickle.load( open( "savedata/solar_dist_save.p", "rb" ) )
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
     
     solarLPlants = dict_data['Solar_dist']
     indicesData = dict_data['indicesRad']
     blocksData = dict_data['blocksData']
     scenarios = dict_sim['scenarios']
-    rad_solar = dict_solarL['rad_solar']
+    rad_solar = dict_solarD['rad_solar']
     solarData = dict_data['SdistData']
     numAreas = dict_data['numAreas']
     yearvector = dict_sim['yearvector']

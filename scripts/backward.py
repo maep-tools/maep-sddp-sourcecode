@@ -228,7 +228,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     dictplant = {hydroPlants[z]: dict_hydro['volmax'][z] for z in range(len(hydroPlants))}
     model.maxVolH = pyomo.Param(model.Hydro, initialize=dictplant)
     # bounds (min and max) on capacity of batteries
-    model.minlvlB = pyomo.Param(model.Batteries, mutable=True)
+    model.maxlvl = pyomo.Param(model.Batteries, mutable=True)
     model.maxlvlB = pyomo.Param(model.Batteries, mutable=True)
     # bounds (max) on capacity of lines
     model.lineLimit = pyomo.Param(model.Circuits, model.Blocks, mutable=True)
@@ -312,7 +312,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     load_balance(Param, model, pyomo)
     
     # define constraint: energy conservation
-    energy_conservation(model, pyomo)
+    energy_conservation(Param, model, pyomo)
 
     # define constraint: Wind production conservation
     storage_function(Param, model, pyomo)
@@ -387,8 +387,8 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
                 model.maxGenH[plant, y+1] = dh_limits[z][i-1]*blocksdata[0][y]
 
         for z, plant in enumerate(batteries):
-            model.minlvlB[plant] = db_storage[z][i-1][1]
-            model.maxlvlB[plant] = db_storage[z][i-1][0]
+            model.maxlvl[plant] = db_storage[z][i-1][1]
+            model.maxlvlB[plant] = db_storage[z][i-1][0]*blocksdata[0][y]*b_storageData[z][y]
             model.factorB[plant] = dict_data['battData'][4][z]
             for y in range(numBlocks):
                 model.maxGenB[plant, y+1] = dict_batt["b_limit"][z][i-1]*blocksdata[0][y]*b_storageData[z][y] # restrictions

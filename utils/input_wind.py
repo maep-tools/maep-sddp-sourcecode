@@ -178,43 +178,47 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
                                 
                                 # mean and variance
                                 p_m = (mu**3 + 3*mu*var)*o_idx/1e6
-                                p_var = 3*var*( 3*(mu**4) + 12*var*(mu**2) + 5*(var**2) )*(o_idx**2)/1e6
+                                p_var = 3*var*( 3*(mu**4) + 12*var*(mu**2) + 5*(var**2) )*((o_idx/1e6)**2)
                                 
                                 # Truncated
-                                if o_idx == 0:
-                                    Fp0 = 0.99 # probability 1 - no wind power
-                                else:
-                                    cdf_out = norm.cdf((p_max-p_m)/(p_var**0.5))
-                                    cdf_in = norm.cdf((p_min-p_m)/(p_var**0.5))
-                                    
-                                    # probability 1 - no wind power
-                                    Fp0 = cdf_in + (1-cdf_out)
+                                cdf_out = norm.cdf((windData[12][idx]-mu)/(var**0.5))
+                                cdf_in = norm.cdf((windData[11][idx]-mu)/(var**0.5))
+                                
+                                # probability 1 - no wind power
+                                Fp0 = cdf_in + (1-cdf_out)
                                 
                                 if Fp0 >= 1:
-                                    speed_sc.append([0]*5)
+                                    speed_sc.append([0]*4)
                                     
                                 else:
-                                    
                                     # truncation correction
-                                    normA = (p_min-p_m)/(p_var**0.5); normB = (p_max-p_m)/(p_var**0.5)
+                                    normA = (-p_m)/(p_var**0.5); normB = (p_max-p_m)/(p_var**0.5)
                                     c_normA = norm.pdf(normA)
                                     c_normB = norm.pdf(normB)
                                     
-                                    p_m = (p_m - (p_var**0.5)*((c_normB-c_normA)/(1-Fp0))) * windData[1][idx]
-                                    p_var = p_var * ( 1 - (((normB*c_normB)-(normA*c_normA))/(1-Fp0)) - ((c_normB-c_normA)/(1-Fp0))**2)
-    
-                                    # save data
-                                    speed_sc.append([p_m,p_var,p_min,p_max,p_nom])
-                                
+                                    p_m2 = (p_m - ((p_var**0.5)*((c_normB-c_normA)/(1-Fp0)))) * windData[1][idx]
+                                    
+                                    #speed_sc.append([p_m2,p_var,p_min,p_nom])
+                                    
+                                    if p_m2 > p_nom and p_m2 <= p_max:
+                                        speed_sc.append([p_nom,0,p_min,p_nom])
+                                        
+                                    elif p_m2 <= p_min or p_m2 > p_max:
+                                        speed_sc.append([0,0,p_min,p_nom])
+                                        
+                                    elif p_m2 > p_min and p_m2 <= p_nom:
+                                        p_var2 = p_var * ( 1 + (((normA*c_normA)-(normB*c_normB))/(1-Fp0)) - ((c_normA-c_normB)/(1-Fp0))**2)
+                                        speed_sc.append([p_m2,p_var2,p_min,p_nom])
+                                        
                             else:
                                 # Plants with entrance stage different than cero
-                                speed_sc.append([0]*5)
+                                speed_sc.append([0]*4)
                             
                         power_wind_var[i][n][k]= speed_sc 
             
         else:
             # Inflow by blocks with short term variability
-            power_wind_var = [[[[[0]*5 for j in range(len(blocksData[0]))] for x in range(scenarios) ] for y in range(stages)] for z in range(1)]
+            power_wind_var = [[[[[0]*4 for j in range(len(blocksData[0]))] for x in range(scenarios) ] for y in range(stages)] for z in range(1)]
             
         # Save areas
         power_area.append(power_wind_var)
@@ -229,15 +233,19 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
         power_temp = [[[[] for x in range(len(blocksData[0])) ] for y in range(scenarios)] for z in range(stages)]
         
         for n in range(stages): 
-            for k in range(scenarios): 
+            #print('stage', n)
+            for k in range(scenarios):
+                #print('scenario',k)
                 for j in range(len(blocksData[0])): 
-                    sum_p = [0]*5
+                    sum_p = [0]*4
+                    #print('block',j)
                     for i in range(len(ene_area)):
                         sum_p = [sum(x) for x in zip(sum_p, ene_area[i][n][k][j])]
+                        #print('area',i)
                     
-                    if sum_p[0] > 0:
-                        inf_sum = (sum_p[2]-sum_p[0])/(sum_p[1]**0.5)
-                        sup_sum = (sum_p[4]-sum_p[0])/(sum_p[1]**0.5)
+                    if sum_p[1] > 0:
+                        inf_sum = (-sum_p[0])/(sum_p[1]**0.5)
+                        sup_sum = (sum_p[3]-sum_p[0])/(sum_p[1]**0.5)
                         
                         # quantile
                         q_low = norm.cdf(inf_sum)
@@ -254,7 +262,7 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
                     
                     else:
                         # No power plants in the area
-                        power_temp[n][k][j]= 0
+                        power_temp[n][k][j]= sum_p[0]*yearvector[n]*blocksData[0][j]
                     
         # save data areas
         power_area_quant.append(power_temp)
@@ -267,15 +275,15 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
     for n in range(stages): 
         for k in range(scenarios): 
             for j in range(len(blocksData[0])): 
-                sum_p = [0]*5
+                sum_p = [0]*4
                 for area in range(numAreas):
                     lenwind= len(power_area[area])
                     for i in range(lenwind):
                         sum_p = [sum(x) for x in zip(sum_p, power_area[area][i][n][k][j])]
                 
-                if sum_p[0] > 0:
-                    inf_sum = (sum_p[2]-sum_p[0])/(sum_p[1]**0.5)
-                    sup_sum = (sum_p[4]-sum_p[0])/(sum_p[1]**0.5)
+                if sum_p[1] > 0:
+                    inf_sum = (-sum_p[0])/(sum_p[1]**0.5)
+                    sup_sum = (sum_p[3]-sum_p[0])/(sum_p[1]**0.5)
                     
                     # quantile
                     q_low = norm.cdf(inf_sum)
@@ -292,7 +300,7 @@ def inputInflowWind(dict_data,stages,eps_area,eps_all):
         
                 else:
                     # No power plants in the system
-                    power_general_quant[n][k][j]= 0
+                    power_general_quant[n][k][j]= sum_p[0]*yearvector[n]*blocksData[0][j]
     
     ###########################################################################
     

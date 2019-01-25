@@ -61,6 +61,8 @@ def inputDFWind(dict_data,Param):
                 deviation = windData[10][idx]/100
                 o_idx = (3.1416/8)*windData[2][idx]*windData[3][idx]*(windData[4][idx]**2)*numTbn
                 p_nom = (windData[5][idx]**3) * o_idx #  /1e6
+                p_max = (windData[12][idx]**3) * o_idx #/1e6
+                p_min = (windData[11][idx]**3) * o_idx #/1e6
                 
                 for n in range(Param.stages): 
                     scenario_inflow = speed_wind_temp[i][1][n]
@@ -76,12 +78,15 @@ def inputDFWind(dict_data,Param):
                                 
                                 sample_power = []
                                 for count in range(Param.dist_samples):
-                                    if sample[count] > windData[12][idx] or sample[count] < windData[11][idx]:
+                                    
+                                    sampl_val = (sample[count]**3 )*o_idx * windData[1][idx]
+                                    
+                                    if sampl_val > p_max or sampl_val <= p_min:
                                         sample_power.append(0)
-                                    elif sample[count] > windData[5][idx] and sample[count] <= windData[12][idx]:
+                                    elif sampl_val > p_nom and sampl_val <= p_max:
                                         sample_power.append(p_nom)
-                                    else:
-                                        sample_power.append((sample[count]**3 )*o_idx) # /1e6
+                                    elif sampl_val > p_min and sampl_val <= p_nom:
+                                        sample_power.append(sampl_val)
                                     
                                 speed_sc.append(sample_power)
                                 

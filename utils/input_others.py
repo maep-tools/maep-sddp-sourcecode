@@ -8,7 +8,7 @@ def inputbatteries(dict_data,stages):
     yearvec = dict_sim['yearvector']
     batteries = dict_data['batteries']
     battData = dict_data['battData']
-    expBttData = [[]] # dict_data['expBttData'] Not operative yet
+#    expBttData = [[]] # dict_data['expBttData'] Not operative yet
     
     numBatteries = len(batteries) # batteries
     b_hat = []; b_storage_hat = [] # Limits in the energy delivered at each stage by each batterie
@@ -18,8 +18,8 @@ def inputbatteries(dict_data,stages):
         b_hataux = []; b_storage_aux = []    
         for j in range(len(b_hat1)):
             aux = min(b_hat1[j],b_hat2[j]) 
-            aux2 = battData[3][i] * battData[2][i]  # max storage
-            aux3 = battData[3][i] * battData[1][i] # min storage
+            aux2 = b_hat1[j] # battData[3][i] * battData[2][i]  # max storage
+            aux3 = battData[3][i] * battData[2][i]  # max storage
             if battData[6][i] > j+1: # initial stage
                 aux = 0; aux2 = 0; aux3 = 0
             b_hataux.append(aux * (1-(battData[11][i]/100)))
@@ -31,13 +31,13 @@ def inputbatteries(dict_data,stages):
         b_area.append(battData[9][n])
     
     # Expansion of batteries capacity
-    if len(expBttData[0]) > 0:
-        
-        for i in range(len(expBttData[0])): # loop in modificated plants
-            index = batteries.index(expBttData[0][i])
-            stagemod = expBttData[1][i]
-            for z in range(stagemod,stages+1):
-                b_storage_hat[index][z-1][0] = expBttData[2][i]
+#    if len(expBttData[0]) > 0:
+#        
+#        for i in range(len(expBttData[0])): # loop in modificated plants
+#            index = batteries.index(expBttData[0][i])
+#            stagemod = expBttData[1][i]
+#            for z in range(stagemod,stages+1):
+#                b_storage_hat[index][z-1][0] = expBttData[2][i]
                 
     # export data
     DataDictionary = {"b_limit":b_hat,"b_area":b_area, "b_storage":b_storage_hat}
