@@ -26,7 +26,7 @@ def variables(model, pyomo):
         return (0, model.maxGenW[a, b])
     # lines limits
     def boundLines(model, l, b):
-        return (0, model.lineLimit[l, b])
+        return (-model.lineLimit[l, b], model.lineLimit[l, b])
     # lines limits
     def boundDeficit(model, a, b):
         return (0, model.demand[a, b])

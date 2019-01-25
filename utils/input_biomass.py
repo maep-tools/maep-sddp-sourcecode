@@ -1,4 +1,4 @@
-def inputhydro(dict_data):
+def inputbiomass(dict_data):
     
     import pickle
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )

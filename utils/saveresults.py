@@ -1,14 +1,15 @@
 
 def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
              genHydro,genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,
-             numAreas,linTransfer,linesData,spillHydro,genwind,spillwind,genSmall,
-             smallPlants,rnwArea,Param,emissCurve,genRnws):
+             linTransfer,linesData,spillHydro,genwind,spillwind,genSmall,smallPlants,
+             rnwArea,Param,emissCurve,genRnws):
     
     import pickle
     dict_data = pickle.load(open("savedata/data_save_iter.p", "rb"))
     volData = dict_data['volData']
     thermalData = dict_data['thermalData']
     smallData = dict_data['smallData']
+    numAreas = dict_data['numAreas']
     
     # extracting results
     for gen_T in [instance.prodT]: Tobject = getattr(instance, str(gen_T))
@@ -72,7 +73,7 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
         for j in lenblk:
             aux1 = 0; aux2 = 0; aux3 = 0
             for i, plant in enumerate(thermalPlants):
-                aux1 += genThermal[k][s][i][j] * ((Param.thermal_co2[0]*thermalData[13][i])+
+                aux1 = aux1 + genThermal[k][s][i][j] * ((Param.thermal_co2[0]*thermalData[13][i])+
                      (Param.thermal_co2[1]*thermalData[12][i]*thermalData[11][i]))
             for i, plant in enumerate(smallPlants):
                 aux2 += genSmall[k][s][i][j] * smallData[8][i]
@@ -85,10 +86,14 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
              lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve,genRnws)
 
 def printresults(Param,sol_scn):
-
-    from reports_utils.dispatch import gendispatch, genrenewables
+    
+    import pickle
+    dict_data = pickle.load(open("savedata/data_save_iter.p", "rb"))
+    numAreas = dict_data['numAreas']
+    
+    from reports_utils.dispatch import gendispatch, genrenewables, transferareas
     from reports_utils.batteries_report import chargedis
-    from reports_utils.curves_report import marginalcost
+    from reports_utils.curves_report import marginalcost, emissions
     from reports_utils.hydroscenarios import hydrogen
     from utils.file_results import xlsfile
 
@@ -109,4 +114,12 @@ def printresults(Param,sol_scn):
     
     # storage behaviour
     if Param.curves[4][0] is True: chargedis(Param)
+    
+    # renewables generation
+    if numAreas is not 1:
+        if Param.curves[5] is True: transferareas(Param)
+        
+    if Param.curves[6] is True and Param.emss_curve is True: emissions(Param)
+         
+    
     

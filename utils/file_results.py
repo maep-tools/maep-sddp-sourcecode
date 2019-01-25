@@ -496,12 +496,15 @@ def xlsfile(Param):
                     genBdisBlockFinal[j][x] += loadBatteries[i][j][k][x]
                     
     ###########################################################################
+    
+    lineval = int(len(linesData))
+    transFinal = [[] for y in range(lineval) ]
+    
     if numAreas is not 1:
 
         scnTransfer = [[[[[] for y in lensc] for y in lenstg] for a in range(numAreas)] for z in range(numAreas)]
 
         ws10 = wb.create_sheet(title="EnergyTransfer")
-        lineval = int(len(linesData))
         for i in range(scenarios):
             _ = ws10.cell(column=4+(i+1),row=2, value='Scenario:'+str(i+1) )
             for j in range(stages):
@@ -532,10 +535,11 @@ def xlsfile(Param):
             for j in range(stages):
                 trf_stg = 0
                 for i in range(scenarios):
-                    trf_stg += sum(scnTransfer[org-1][dest-1][j][i])#-sum(scnTransfer[dest-1][org-1][j][i])
+                    trf_stg += sum(scnTransfer[org-1][dest-1][j][i]) 
 
                 _ = ws10_1.cell(column=1+(k+1), row=2+(j+1), value = trf_stg/scenarios)
                 _ = ws10_1.cell(column=1, row=2+(j+1), value=j+1)
+                transFinal[k].append(trf_stg/scenarios)
 
         ws10_1['A2'] = 'stage'
 
@@ -556,7 +560,7 @@ def xlsfile(Param):
     
     if Param.emss_curve is True:
         
-        ws10_3 = wb.create_sheet(title="emissions")
+        ws10_3 = wb.create_sheet(title="Emissions")
     
         for i in range(scenarios):
             for j in range(stages):
@@ -632,6 +636,6 @@ def xlsfile(Param):
                "genDFinal":genDFinal,"genBFinal":genBFinal,"genMFinal":genMFinal,
                "genSFinal":genSFinal,"emssiFinal":emssiFinal,"genRnFinal":genRnFinal,
                "genBdisFinal":genBdisFinal,"genBBlockFinal":genBBlockFinal,
-               "genBdisBlockFinal":genBdisBlockFinal}
+               "genBdisBlockFinal":genBdisBlockFinal,"transFinal":transFinal}
 
     pickle.dump(datasol, open( "savedata/html_save.p", "wb" ) )

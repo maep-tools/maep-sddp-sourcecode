@@ -486,9 +486,9 @@ def data(confidence, Param, iteration, fcf_Operator):
                 (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
                 lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emsscurve,genRnws) = saveiter(k,
                 s,lenblk,thermalPlants,model,genThermal,hydroPlants,batteries,genHydro,
-                genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,numAreas,
-                linTransfer,circuits,spillHydro,genwind,spillwind,genSmall,smallPlants,
-                rnwArea,Param,emissCurve,genRnws)
+                genBatteries,loadBatteries,lvlBatteries,lvlHydro,genDeficit,linTransfer,
+                circuits,spillHydro,genwind,spillwind,genSmall,smallPlants,rnwArea,Param,
+                emissCurve,genRnws)
 
             # progress of the analysis
             bar.update(count+1)

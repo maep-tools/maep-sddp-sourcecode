@@ -494,8 +494,6 @@ def genrenewables(Param):
     axisfixhig = horizon[stages-1] + datetime.timedelta(hours = 360)
     x=horizon #list(range(1,stages+1))
     
-    ###########################################################################
-    
     # all areas dispatch
     if Param.dist_free is True:
         y0_org = []
@@ -522,7 +520,7 @@ def genrenewables(Param):
     
     # Create traces
     trace = go.Scatter(
-            x = x[:30],
+            x = x[:stages],
             y = y0_org[:],
             mode = 'lines',
             name = 'renewables dispatch'
@@ -564,4 +562,78 @@ def genrenewables(Param):
     Html_file= open("results/report_variables/renewables_report.html","w")
     Html_file.write(html_out)
     Html_file.close()
+
+    ###########################################################################
+
+def transferareas(Param): 
     
+    import pickle
+    dict_charts = pickle.load( open( "savedata/html_save.p", "rb" ) )
+    dict_data = pickle.load( open( "savedata/data_save.p", "rb" ) )
+    
+    # plor format
+    dict_fig ={}
+    
+    import plotly
+    import plotly.graph_objs as go
+
+    transFinal = dict_charts['transFinal']
+    horizon = dict_data["horizon"]
+    lines = dict_data["linesData"]
+    
+    stages = Param.stages-Param.bnd_stages
+    
+    import datetime
+    axisfixlow = horizon[0] + datetime.timedelta(hours = -360)
+    axisfixhig = horizon[stages-1] + datetime.timedelta(hours = 360)
+    x=horizon #list(range(1,stages+1))
+    
+    data = []
+    
+    for i in range(len(lines)):
+    
+        # Create traces
+        trace = go.Scatter(
+            x = x[:stages],
+            y = transFinal[i],
+            mode = 'lines',
+            name = 'from node '+str(lines[i][0])+' to node '+str(lines[i][1])
+        )
+        data.append(trace)
+            
+    #data = [trace]
+    layout = go.Layout(
+    autosize=False,
+    width=800,
+    height=500,
+    #title='Double Y Axis Example',
+    yaxis=dict(title='Energy [MWh]',
+               titlefont=dict(
+                       family='Arial, sans-serif',
+                       size=18,
+                       color='darkgrey'),
+               #tickformat = ".0f"
+               exponentformat = "e",
+               #showexponent = "none",
+               ticks = "inside"
+               ),
+    xaxis=dict(range=[axisfixlow,axisfixhig])
+    )
+    fig = go.Figure(data=data, layout=layout)
+    dict_fig["aggr"] = plotly.offline.plot(fig, output_type = 'div')
+    
+    from jinja2 import Environment, FileSystemLoader
+    
+    env = Environment(loader=FileSystemLoader('.'))
+    template = env.get_template("templates/transferareas_report.html")
+    
+    template_vars = {"title" : "Report",
+                     "data1": "Transfer of energy",
+                     "div_placeholder1A": dict_fig["aggr"]
+                     }
+    
+    html_out = template.render(template_vars)
+    
+    Html_file= open("results/report_variables/transferareas_report.html","w")
+    Html_file.write(html_out)
+    Html_file.close()

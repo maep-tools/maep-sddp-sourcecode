@@ -63,7 +63,7 @@ def hydrogen(Param):
     
         # Create traces
         trace = go.Scatter(
-            x = x[:30],
+            x = x[:stages],
             y = tray_scn[i][:],
             mode = 'lines',
             name = 'sceanrios '+str(i+1)
