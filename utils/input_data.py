@@ -1,4 +1,4 @@
-def inputdata(dictionary,Param):
+def inputdata(dict_data,Param):
     
     import calendar
     import numpy as np
@@ -6,26 +6,33 @@ def inputdata(dictionary,Param):
     from utils.paramvalidation import scenariosvalidation
     
     # Dictionary    
-    horizon = dictionary['horizon']
-    thermalData = dictionary['thermalData']
-    smallData = dictionary['smallData']
-    demandData = dictionary['demandData']
-    blocksData = dictionary['blocksData']
-    inflowData = dictionary['inflowData']
-    hydroPlants = dictionary['hydroPlants']
-    volData = dictionary['volData']
-    thermalPlants = dictionary['thermalPlants']
-    smallPlants = dictionary['smallPlants']
-    numAreas = dictionary['numAreas']
-    expThData = dictionary['expThData']
-    expSmData = dictionary['expSmData']
-    costData = dictionary['costData']
-    fuelData = dictionary['fuelData']
-    gatesData = dictionary['gatesData']
-    biomassPlants = dictionary["BiomassPlants"]
-    inflowBioData = dictionary["inflowBioData"]
-    biomassData = dictionary["BiomassData"]
+    horizon = dict_data['horizon']
+    thermalData = dict_data['thermalData']
+    smallData = dict_data['smallData']
+    demandData = dict_data['demandData']
+    blocksData = dict_data['blocksData']
+    inflowData = dict_data['inflowData']
+    hydroPlants = dict_data['hydroPlants']
+    volData = dict_data['volData']
+    thermalPlants = dict_data['thermalPlants']
+    smallPlants = dict_data['smallPlants']
+    numAreas = dict_data['numAreas']
+    expThData = dict_data['expThData']
+    expSmData = dict_data['expSmData']
+    costData = dict_data['costData']
+    fuelData = dict_data['fuelData']
+    gatesData = dict_data['gatesData']
+    biomassPlants = dict_data["biomassPlants"]
+    inflowBioData = dict_data["inflowBioData"]
+    biomassData = dict_data["biomassData"]
+    costBData = dict_data['costBData']
+    fuelBData = dict_data['fuelBData']
     
+    # Daily analisys
+    if Param.horizon in ['d','D','daily','Daily']:
+        dict_main = pickle.load( open( "savedata/data_save_maintenance.p", "rb" ) )
+        mainTpercData = dict_main['mainTpercData']
+        
     ###########################################################################
             
     # Demand, series and max thermal capacity generation (MWh)    
@@ -59,12 +66,17 @@ def inputdata(dictionary,Param):
             for k in range(numBlocks):
                 demandAux_area.append(demandData[0][i]*demandData[z+1][i]*blocksData[z+1][k])
             demandAux.append(demandAux_area)
-        year = horizon[i].year; month = horizon[i].month
-        days = calendar.monthrange(year,month); 
-        aux = days[1]*24
-        # if days[1] == 29: # standard
-        #    aux = 28*24
-        yearvector.append(aux)
+        # horizon
+        if Param.horizon in ['m','M','monthly','Monthly']:
+            year = horizon[i].year; month = horizon[i].month
+            days = calendar.monthrange(year,month); 
+            aux = days[1]*24
+            # if days[1] == 29: # standard
+            #    aux = 28*24
+            yearvector.append(aux)
+        elif Param.horizon in ['d','D','daily','Daily']:
+            aux = 24
+            yearvector.append(24)
         
         # Demand
         for k in range (numAreas):        
@@ -136,8 +148,18 @@ def inputdata(dictionary,Param):
             gmaxplant = [x * expThData[2][i] * (1-(expThData[6][i]/100)) for x in yearvector[stagemod-1:]]
             
             for z in range(stagemod,stages+1):
-                thermalMax[z-1][index] = gmaxplant[z-stagemod]
-        
+                thermalMax[z][index] = gmaxplant[z-stagemod]
+                thermalMin[z][index] = gmaxplant[z-stagemod]
+    
+    ###########################################################################
+
+    # Maintenance
+    if Param.horizon in ['d','D','daily','Daily']:
+        for z in range(stages):
+            for k in range(len(thermalPlants)):
+                thermalMax[z][k] = thermalMax[z][k]*(1-mainTpercData[k][z])
+                thermalMin[z][k] = thermalMin[z][k]*(1-mainTpercData[k][z])
+                    
     ###########################################################################
     
     # Expansion of small plants
@@ -153,13 +175,20 @@ def inputdata(dictionary,Param):
         
     ###########################################################################
     
-    # operating costs
+    # operating costs thermal
     opCost = []
     for n in range(len(thermalPlants)):
         index = costData.index(thermalData[4][n])
         opCostSingle = [x*thermalData[11][n]+thermalData[10][n] for x in fuelData[index]]
         opCost.append(opCostSingle)
     
+    # operating costs biomass
+    opCostBio = []
+    for n in range(len(biomassPlants)):
+        index = costBData.index(biomassData[10][n])
+        opCostBSingle = [x*thermalData[9][n]*(1/biomassData[8][n])+biomassData[12][n] for x in fuelBData[index]]
+        opCostBio.append(opCostBSingle)
+        
     ###########################################################################
     
     # Area thermal       
@@ -187,7 +216,8 @@ def inputdata(dictionary,Param):
     "numBlocks":numBlocks,"area_hydro":area_hydro,"area_thermal":area_thermal,
     "opCost":opCost,"smallMax":smallMax,"area_small":area_small,"thermalMin":thermalMin,
     "numGates":numGates,"demandArea":demandArea,"inflow_biomass":inflow_biomass,
-    "area_biomass":area_biomass,"biomassMin":biomassMin,"biomassMax":biomassMax}
+    "area_biomass":area_biomass,"biomassMin":biomassMin,"biomassMax":biomassMax,
+    "opCostBio":opCostBio}
     
     pickle.dump(DataDictionary, open( "savedata/format_save.p", "wb" ) )
     

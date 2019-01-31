@@ -31,7 +31,7 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
         inputdata(dict_data, Param)
     
         from utils.input_hydro import inputhydro
-        inputhydro(dict_data)
+        inputhydro(dict_data, Param)
         
         # wind speed data
         from utils.input_wind import inputwindSet
@@ -104,22 +104,28 @@ def optimization(Param):
     #start = timeit.default_timer()
     
     from scripts import forward as forward
+    #from scripts import forward2
     from scripts import backward as backward
+    #from scripts import backward2
     from scripts import optimality
     
     # Load the dictionary back from the pickle file
     dict_data = pickle.load(open("savedata/data_save.p", "rb"))
+    dict_batt = pickle.load(open("savedata/batt_save.p", "rb"))
     
     # dictionaries
     batteries = dict_data['batteries']
     hydroPlants = dict_data['hydroPlants']
-    dict_batt = pickle.load(open("savedata/batt_save.p", "rb"))
+    #biomassPlants = dict_data["biomassPlants"]
     
     # Iteration inf _ improve the states under evaluation
     sol_vol = [[] for x in range(Param.stages+1)] # Hydro iteration
     sol_lvl = [[] for x in range(Param.stages+1)] # Batteries iteration
+    sol_stc = [[] for x in range(Param.stages+1)] # Batteries iteration
+    
     sol_vol[0].append(dict_data['volData'][0])
     sol_lvl[0].append([dict_data['battData'][0][x]*dict_batt["b_storage"][x][0][0] for x in range(len(batteries))])
+    sol_stc[0].append(dict_data['biomassData'][0])
     
     iteration = 0 # Counter for number of iterations
     confidence = 0 # stop criteria
@@ -145,12 +151,16 @@ def optimization(Param):
             # save the FCF - backward steps
             fcf_backward = [[] for x in range(Param.stages+1)]
             fcf_backward[Param.stages]=[[[0]*len(hydroPlants), [0]*len(batteries), 0]]
-    
+            #fcf_backward2 = [[] for x in range(Param.stages+1)]
+            #fcf_backward2[Param.stages]=[[[0]*len(hydroPlants), [0]*len(batteries), [0]*len(biomassPlants), 0]]
+            
             # Backward_Risk6_par to parallel simulation
             backward.data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic)
+            #backward2.data(Param, fcf_backward2, sol_vol, iteration, sol_lvl, stochastic)
             
             # Forward stage - Pyomo module
             (sv_iter, sl_batt, sol_costs, sol_scn) = forward.data(confidence, Param, iteration, True)
+            #(sv_iter, sl_batt, sol_costs, sol_scn) = forward2.data(confidence, Param, iteration, True)
             
             # save new cuts
             for s in range(Param.stages):

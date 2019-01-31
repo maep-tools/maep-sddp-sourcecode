@@ -987,6 +987,23 @@ def data_file(Param, file):
     
     ###########################################################################
     
+    # Daily analisys
+    if Param.horizon in ['d','D','daily','Daily']:
+        
+        substring = "T_Maintenance"
+        tmaintData, tmaintDataS = mtxincosts(substring,tabnames,importedfile)
+        
+        substring = "H_Maintenance"
+        hmaintData, hmaintDataS = mtxincosts(substring,tabnames,importedfile)
+        
+        # export data            
+        DataDictionary3 = {"mainHpercData":hmaintData,"mainHData":hmaintDataS,
+        "mainTpercData":tmaintData,"mainTData":tmaintDataS}
+        
+        pickle.dump(DataDictionary3, open( "savedata/data_save_maintenance.p", "wb" ) )
+    
+    ###########################################################################
+    
     # export data   
     if Param.wind_model2 is True:
         DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData,
@@ -1000,7 +1017,7 @@ def data_file(Param, file):
         "indicesData":indicesData, "costData":costDataS, "fuelData":costData,
         "windRPlants":windRPlants_act,"windRData":windRData_act,"inflowRealData":inflowRealData_act,
         "indicesRData":indicesRData_act,"ctData_act":ctData_act,"gatesData":gatesData, 
-        "costData":costDataS, "fuelData":costData}
+        "costData":costDataS, "fuelData":costData,"costBData":costBDataS, "fuelBData":costBData}
     else:
         DataDictionary = { "inflowData":inflowData_act,"inflowWindData":inflowWindData,
         "blocksData":blocksData,"horizon":horizon,"demandData":demandData, 
@@ -1013,8 +1030,8 @@ def data_file(Param, file):
         "indicesData":indicesData, "costData":costDataS, "fuelData":costData,"gatesData":gatesData,
         "Solar_large":SB_act,"SlargeData":SBData,"Solar_dist":SD_act,"SdistData":SDData,
         "inflowSolarData":inflowSolarData,"indicesRad":indicesRadData,"TemperatureCell":TemperatureCell,
-        "BiomassPlants":BM_act,"BiomassData":BMData,"inflowBioData":inflowBioData, 
-        "costData":costDataS, "fuelData":costData}
+        "biomassPlants":BM_act,"biomassData":BMData,"inflowBioData":inflowBioData, 
+        "costData":costDataS, "fuelData":costData,"costBData":costBDataS, "fuelBData":costBData}
         
     pickle.dump(DataDictionary, open( "savedata/data_save.p", "wb" ) )
     
@@ -1025,7 +1042,7 @@ def data_file(Param, file):
     "batteries":batteries_act,"linesData":linesData,"hydroReservoir":hPlantsReser,
     "smallPlants":smallPlants_act,"emissionsData":emissionsData,"thermalData":thermalData_act,
     "smallData":smallData_act,"windData":windData,"b_storageData":b_storageData,
-    "BiomassPlants":BM_act,"BiomassData":BMData}
+    "biomassPlants":BM_act,"biomassData":BMData}
     
     pickle.dump(DataDictionary2, open( "savedata/data_save_iter.p", "wb" ) )
    

@@ -11,7 +11,6 @@ Licence MIT
 import timeit
 from scripts import run_model
 
-# print and debug
 # import sys
 # sys.stdout = open('output_console', 'w')
 
@@ -26,10 +25,10 @@ file = '01_example_hydrothermal'       # input file name (DataSystem location)
 class Param:
     
     max_iter = 3              # Maximun number of iterations
-    bnd_stages = 6            # Boundary stages
-    stages = 30 + bnd_stages  # planning horizon: (months + bundary months)
-    seriesBack = 6            # scenarios for the backward phase
-    seriesForw = 6            # scenarios the forward phase
+    bnd_stages = 14            # Boundary stages
+    stages = 14 + bnd_stages  # planning horizon: (months + bundary months)
+    seriesBack = 8            # scenarios for the backward phase
+    seriesForw = 8            # scenarios the forward phase
     
     # Parameters analysis
     sensDem =  0.85      # Demand factor
@@ -38,13 +37,16 @@ class Param:
     eps_risk = 0.1       # long-term risk
     commit = 0.15         # risk-measure comminment
     
+    # Stages-horizon analysis (stages)
+    horizon = "monthly"       # "monthly","weakly","daily" (weakly and daily models are inconclusive)
+    
     # read data options
     read_data = True         # read the input file
     param_calc = True        # parameters calculation
     
     # transmission network
     param_opf = False           # OPF model
-    flow_gates = False          # Security constraints (inefficient calculation)
+    flow_gates = False          # Security constraints (inefficient calculation - inconclusive)
     
     # renewables
     dist_free = False            # Free distribution model (NO portfolio operation)
@@ -53,13 +55,13 @@ class Param:
     portfolio = [True,False]     # [storage-network, storage-wind]
                                  # [False,False] will be turn [True,False]
     # emissions
-    emissions = True         # ObjectiveFunction - emissions costs
-    emss_curve = True        # emissions curve calculation 
+    emissions = False         # ObjectiveFunction - emissions costs
+    emss_curve = False        # emissions curve calculation 
     thermal_co2 = [1, 1]     # Emission factor type selection [tech:Ton/Mwh, Fuel:MBTU/MWh]  
     
     # operation model options
-    policy = False           # algorithm: backward and forward 
-    simulation = False        # algorithm: only forward (it needs cost-to-go function)
+    policy = True           # algorithm: backward and forward 
+    simulation = True        # algorithm: only forward (it needs cost-to-go function)
     parallel = False          # parallelization module (inconcluse)
 
     # PRINT ORDER:  
@@ -67,12 +69,12 @@ class Param:
 
     # reports
     curves = [True,          # 1. dispatch curves
-              False,         # 2. marginal cost
+              True,         # 2. marginal cost
               [False,3],     # 3. Hydro generation scenarios, Number of plant
               False,         # 4. Wind/Renewables generation scenarios
               [False,26],    # 5. Charge and discharge of storage systems, stage to graph
               False,         # 6. Transfer of energy (requieres areas setting)
-              True]          # 7. Emissions
+              False]          # 7. Emissions
 
 #==============================================================================
 # run model
@@ -83,5 +85,3 @@ run_model.execution(Param, file)
 # print execution time
 end = timeit.default_timer()
 print(end - start)
-
-# validation: dist_free analysis do not consider renewable sources emission in the objective function

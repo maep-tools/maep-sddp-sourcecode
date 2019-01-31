@@ -1,4 +1,4 @@
-def inputhydro(dict_data):
+def inputhydro(dict_data, Param):
     
     import pickle
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
@@ -8,13 +8,18 @@ def inputhydro(dict_data):
     volData = dict_data['volData']
     expData = dict_data['expData']
     
+    # Daily analisys
+    if Param.horizon in ['d','D','daily','Daily']:
+        dict_main = pickle.load( open( "savedata/data_save_maintenance.p", "rb" ) )
+        mainHpercData = dict_main['mainHpercData']
+        
     # hydro limits
     numReservoirs = len(hydroPlants) # Reservoirs asociated with hydro plants
     prodFactor = [x*(1e6/3600) for x in volData[4]] # Production factor of hydro plants
     u_hat = [] # Limits in the volume turbined at each stage by each hydro plant
     for i in range(numReservoirs):
         # if some reservoirs are not linked to a generation plant
-        if prodFactor[i] == 0 or volData[3] == 0:
+        if prodFactor[i] == 0 or volData[3][i] == 0:
             u_hat2 = [x*(volData[5][i]*3600*1e-6) for x in yearvec[0:]]
             u_hataux = []    
             for j in range(len(u_hat2)):
@@ -56,7 +61,12 @@ def inputhydro(dict_data):
                 u_hataux.append(aux*(1-(expData[7][i]/100)))
             u_hat[index][expData[4][i]-1:] = u_hataux
             
-    
+    # Maintenance
+    if Param.horizon in ['d','D','daily','Daily']:
+        for k in range(numReservoirs):
+            for z in range(len(u_hat[0])):
+                u_hat[k][z] = u_hat[k][z]*(1-mainHpercData[k][z])
+                
     # Save  OyM costs
     oymcost = []; volmin = []; volmax = []; tdownstream = []; sdownstream = []
     for n in range(len(hydroPlants)): 
