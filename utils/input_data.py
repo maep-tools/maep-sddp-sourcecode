@@ -147,9 +147,9 @@ def inputdata(dict_data,Param):
             stagemod = expThData[1][i]
             gmaxplant = [x * expThData[2][i] * (1-(expThData[6][i]/100)) for x in yearvector[stagemod-1:]]
             
-            for z in range(stagemod,stages):
-                thermalMax[z][index] = gmaxplant[z-stagemod]
-                thermalMin[z][index] = gmaxplant[z-stagemod]
+            for z in range(stagemod,stages+1):
+                thermalMax[z-1][index] = gmaxplant[z-stagemod]
+                thermalMin[z-1][index] = gmaxplant[z-stagemod]
     
     ###########################################################################
 
