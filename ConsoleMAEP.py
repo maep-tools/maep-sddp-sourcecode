@@ -20,7 +20,7 @@ start = timeit.default_timer()
 #==============================================================================
 
 # Parameters simulation
-file = '01_example_hydrothermal'       # input file name (DataSystem location)
+file = '06_example_storage_limited2'       # input file name (DataSystem location)
 
 class Param:
     
@@ -38,7 +38,7 @@ class Param:
     commit = 0.15         # risk-measure comminment
     
     # Stages-horizon analysis (stages)
-    horizon = "monthly"       # "monthly","weakly","daily" (weakly and daily models are inconclusive)
+    horizon = "monthly"       # "monthly","weakly","daily" (weakly models are inconclusive)
     
     # read data options
     read_data = True         # read the input file
@@ -50,17 +50,17 @@ class Param:
     
     # renewables
     dist_free = False            # Free distribution model (NO portfolio operation)
-    dist_samples = 10            # sample for p-efficient points calculation
+    dist_samples = 9             # sample for p-efficient points calculation
     wind_model2 = False          # Second model of wind plants (inconcluse)
     portfolio = [True,False]     # [storage-network, storage-wind]
-                                 # [False,False] will be turn [True,False]
+                                 # [False,False] will be turn [True,False], [True,True] option is inconclusive
     # emissions
     emissions = False         # ObjectiveFunction - emissions costs
     emss_curve = False        # emissions curve calculation 
-    thermal_co2 = [1, 1]     # Emission factor type selection [tech:Ton/Mwh, Fuel:MBTU/MWh]  
+    thermal_co2 = [1, 1]      # Emission factor type selection [tech:Ton/Mwh, Fuel:MBTU/MWh]  
     
     # operation model options
-    policy = True           # algorithm: backward and forward 
+    policy = True            # algorithm: backward and forward 
     simulation = True        # algorithm: only forward (it needs cost-to-go function)
     parallel = False          # parallelization module (inconcluse)
 
@@ -69,10 +69,10 @@ class Param:
 
     # reports
     curves = [True,          # 1. dispatch curves
-              True,         # 2. marginal cost
+              True,          # 2. marginal cost
               [False,3],     # 3. Hydro generation scenarios, Number of plant
               False,         # 4. Wind/Renewables generation scenarios
-              [False,26],    # 5. Charge and discharge of storage systems, stage to graph
+              [True,10],     # 5. Charge and discharge of storage systems, stage to graph
               False,         # 6. Transfer of energy (requieres areas setting)
               False]          # 7. Emissions
 
