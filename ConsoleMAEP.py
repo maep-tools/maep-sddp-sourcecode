@@ -33,8 +33,8 @@ class Param:
     # Parameters analysis
     sensDem =  0.85      # Demand factor
     eps_area = 0.1       # Short-term - significance level area
-    # eps_all = 0.5        # Short-term - significance level for the whole system
-    eps_risk = 0.1       # long-term risk
+    eps_all = 0.1        # Short-term - significance level for the whole system
+    eps_risk = 0.15       # long-term risk
     commit = 0.15         # risk-measure comminment
     
     # Stages-horizon analysis (stages)
