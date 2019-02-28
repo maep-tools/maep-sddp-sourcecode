@@ -280,20 +280,17 @@ def data_file(Param, file):
     
     with open('temp/RationingCosts.csv') as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
-        for row in readCSV: columns = len(row); break 
-    with open('temp/RationingCosts.csv') as csvfile:
-        readCSV = csv.reader(csvfile, delimiter=',')
-        rationingData = [[] for x in range(columns-1)];  
+        rationingData = [[] for x in range(numAreas)];  
         for row in readCSV:
-            for col in range(columns-1):
+            for col in range(numAreas):
                 val = row[col+1]
                 try: 
                     val = float(row[col+1])
                 except ValueError:
                     pass
                 rationingData[col].append(val)
-    for col in range(columns-1):
-        rationingData[col].pop(0)    
+    for col in range(numAreas):
+        rationingData[col].pop(0) 
     
     ###########################################################################
 
