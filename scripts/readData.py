@@ -3,7 +3,13 @@ import csv
 import datetime
 
 ###############################################################################
-   
+def is_empty(any_structure):
+    if any_structure:
+        return False
+    else:
+        return True
+
+###############################################################################
 def mtxplant(substring,tabnames,horizon,importedfile,areasData,colact,colarea):
     
     xlxstocsv(tabnames,substring,importedfile)
@@ -16,6 +22,7 @@ def mtxplant(substring,tabnames,horizon,importedfile,areasData,colact,colarea):
         readCSV = csv.reader(csvfile, delimiter=',')
         Plants = []; Data = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             tplants = row[0]; 
             Plants.append(tplants)
             for col in range(columns-1):
@@ -74,6 +81,7 @@ def mtxinflow(substring,tabnames,importedfile):
         readCSV = csv.reader(csvfile, delimiter=',')
         Data = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(2):
                 val = row[col]
                 try: 
@@ -103,6 +111,7 @@ def mtxincosts(substring,tabnames,importedfile):
         readCSV = csv.reader(csvfile, delimiter=',')
         Data = [[] for x in range(columns-1)];  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(columns-1):
                 val = row[col+1]
                 try: 
@@ -141,6 +150,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         areasData = [[] for x in range(2)];  
         for row in readCSV:
+            if is_empty(row) is True: break 
             val = row[0]
             try: 
                 val = int(row[0])
@@ -165,6 +175,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         demandData = [[] for x in range(columns-1)];  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(columns-1):
                 val = row[col+1]
                 try: 
@@ -199,6 +210,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         thermalPlants = []; thermalData = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             tplants = row[0]; 
             thermalPlants.append(tplants)
             for col in range(columns-1):
@@ -248,6 +260,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         expThData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             expThData[0].append(row[0])
             for col in range(columns-1):
                 val = row[col+1]
@@ -282,6 +295,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         rationingData = [[] for x in range(numAreas)];  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(numAreas):
                 val = row[col+1]
                 try: 
@@ -290,7 +304,7 @@ def data_file(Param, file):
                     pass
                 rationingData[col].append(val)
     for col in range(numAreas):
-        rationingData[col].pop(0) 
+        rationingData[col].pop(0)    
     
     ###########################################################################
 
@@ -304,6 +318,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         blocksData = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(columns-1):
                 val = row[col+1]
                 try: 
@@ -326,6 +341,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         b_storageData = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(columns-1):
                 val = row[col+1]
                 try: 
@@ -348,6 +364,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         batteries = []; battData = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             tplants = row[0]; 
             batteries.append(tplants)
             for col in range(columns-1):
@@ -401,6 +418,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         expBttData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             expBttData[0].append(row[0])
             for col in range(columns-1):
                 val = row[col+1]
@@ -433,6 +451,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         hydroPlants = []; volData = [[] for x in range(columns-1)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             tplants = row[0]; 
             hydroPlants.append(tplants)
             for col in range(columns-1):
@@ -499,6 +518,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         expData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             expData[0].append(row[0])
             for col in range(columns-1):
                 val = row[col+1]
@@ -531,6 +551,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         inflowData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(2):
                 val = row[col]
                 try: 
@@ -588,6 +609,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         expWindData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             expWindData[0].append(row[0])
             for col in range(columns-1):
                 val = row[col+1]
@@ -623,6 +645,7 @@ def data_file(Param, file):
             readCSV = csv.reader(csvfile, delimiter=',')
             windRPlants = []; windRData = [[] for x in range(columns-1)]  
             for row in readCSV:
+                if is_empty(row) is True: break 
                 tplants = row[0]; 
                 windRPlants.append(tplants)
                 for col in range(columns-1):
@@ -711,6 +734,7 @@ def data_file(Param, file):
             readCSV = csv.reader(csvfile, delimiter=',')
             indicesRData = [[] for x in range(columns)]  
             for row in readCSV:
+                if is_empty(row) is True: break 
                 for col in range(2):
                     val = row[col]
                     try: 
@@ -767,7 +791,7 @@ def data_file(Param, file):
     substring = "Lines"
     xlxstocsv(tabnames,substring,importedfile)
     
-    if numAreas is not 1:
+    if numAreas != 1:
         with open('temp/Lines.csv') as csvfile:
             readCSV = csv.reader(csvfile, delimiter=',')
             for row in readCSV: columns = len(row); break
@@ -775,6 +799,7 @@ def data_file(Param, file):
             readCSV = csv.reader(csvfile, delimiter=',')
             linesData = [] 
             for row in readCSV:
+                if is_empty(row) is True: break 
                 rowval=[]
                 rowval.append(row[0]); rowval.append(row[1])
                 for col in range(columns-2):
@@ -819,7 +844,7 @@ def data_file(Param, file):
         expLinesData = []  
 
         for row in readCSV:
-            
+            if is_empty(row) is True: break 
             vecdata = [row[0],row[1]]
             for col in range(columns-2):
                 
@@ -857,7 +882,7 @@ def data_file(Param, file):
         gatesData = []  
 
         for row in readCSV:
-            
+            if is_empty(row) is True: break 
             vecdata = [row[1],row[2],row[3],row[4]]
             for col in range(12):
                 
@@ -905,6 +930,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         expSmData = [[] for x in range(columns)]  
         for row in readCSV:
+            if is_empty(row) is True: break 
             expSmData[0].append(row[0])
             for col in range(columns-1):
                 val = row[col+1]
@@ -937,6 +963,7 @@ def data_file(Param, file):
         readCSV = csv.reader(csvfile, delimiter=',')
         emissionsData = [[] for x in range(columns-1)];  
         for row in readCSV:
+            if is_empty(row) is True: break 
             for col in range(columns-1):
                 val = row[col+1]
                 try: 
@@ -1042,5 +1069,4 @@ def data_file(Param, file):
     "biomassPlants":BM_act,"biomassData":BMData}
     
     pickle.dump(DataDictionary2, open( "savedata/data_save_iter.p", "wb" ) )
-   
-    
+      
