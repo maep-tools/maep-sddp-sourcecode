@@ -72,7 +72,7 @@ class Param:
               True,          # 2. marginal cost
               [False,3],     # 3. Hydro generation scenarios, Number of plant
               False,         # 4. Wind/Renewables generation scenarios
-              [True,10],     # 5. Charge and discharge of storage systems, stage to graph
+              [False,10],     # 5. Charge and discharge of storage systems, stage to graph
               False,         # 6. Transfer of energy (requieres areas setting)
               False]          # 7. Emissions
 
