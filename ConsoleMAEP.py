@@ -38,7 +38,7 @@ class Param:
     commit = 0.15         # risk-measure comminment
     
     # Stages-horizon analysis (stages)
-    horizon = "monthly"       # "monthly","weakly","daily" (weakly models are inconclusive)
+    horizon = "monthly"       # "monthly","weekly","daily" (weakly models are inconclusive)
     
     # read data options
     read_data = True         # read the input file
