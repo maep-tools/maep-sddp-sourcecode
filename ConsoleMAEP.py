@@ -20,7 +20,7 @@ start = timeit.default_timer()
 #==============================================================================
 
 # Parameters simulation
-file = '06_example_storage_limited2'       # input file name (DataSystem location)
+file = '01_example_hydrothermal'       # input file name (DataSystem location)
 
 class Param:
     
