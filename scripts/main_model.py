@@ -165,11 +165,11 @@ def optimization(Param):
             # save new cuts
             for s in range(Param.stages):
                 # save the last solutions
-                last_sol = [x/Param.seriesForw for x in sv_iter[s]]
-                last_batt = [x/Param.seriesForw for x in sl_batt[s]]
-                if last_sol not in sol_vol[s+1] or last_batt not in sol_lvl[s+1]:
-                    sol_vol[s+1].append([x/Param.seriesForw for x in sv_iter[s]])
-                    sol_lvl[s+1].append([x/Param.seriesForw for x in sl_batt[s]])
+                #last_sol = [x/Param.seriesForw for x in sv_iter[s]]
+                #last_batt = [x/Param.seriesForw for x in sl_batt[s]]
+                #if last_sol not in sol_vol[s+1] or last_batt not in sol_lvl[s+1]:
+                sol_vol[s+1].append([x/Param.seriesForw for x in sv_iter[s]])
+                sol_lvl[s+1].append([x/Param.seriesForw for x in sl_batt[s]])
     
             # confidence
             confd, op_cost, op_inf = optimality.data(sol_costs, Param.seriesForw)

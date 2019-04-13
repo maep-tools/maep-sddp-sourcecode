@@ -111,7 +111,7 @@ def inputDFSolarL(dict_data,Param):
                                 for count in range(Param.dist_samples):
                                     
                                     tcell = t_amb[i][n] + ((sample[count]/800)*(solarData[6][idx] - 20))
-                                    pdc = solarData[1][idx]*(sample[count]/1000)*(1 + ((solarData[5][idx]/100) * (tcell - 25)))
+                                    pdc = solarData[1][idx]*(sample[count]/1000)*(1 - ((solarData[5][idx]/100) * (tcell - 25)))
                                     if pdc > solarData[1][idx]:
                                         pdc = solarData[1][idx]
                                     sample_power.append(pdc*efcc)

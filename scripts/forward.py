@@ -421,7 +421,7 @@ def data(confidence, Param, iteration, fcf_Operator):
 
             # Update the cost-to-go function
             #model.Cuts.clear()
-            for z in range(iteration+1): # len(fcf_backward[s+1])):
+            for z in range(iteration+1): #  len(fcf_backward[s+1])
                 #model.Cuts.add(z+1)
                 if s+1 == Param.stages:
                     model.constTerm[z+1] = fcf_backward[s+1][0][2]

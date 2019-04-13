@@ -353,21 +353,21 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
             model.co2cost = dd_emissions[0][i-1]
             
         # update the local fcf
-        #model.Cuts.clear()
-        for z in range(iteration+1): #len(fcf_backward[i])):
+        coeff_data = fcf_backward[i]
+        for z in range(iteration+1): #len(fcf_backward[i]) 
             #model.Cuts.add(z+1)
             if i == Param.stages:
-                model.constTerm[z+1] = fcf_backward[i][0][2]
+                model.constTerm[z+1] = coeff_data[0][2]
                 for y, plant in enumerate(batteries):
-                    model.coefcBatt[plant, z+1] = fcf_backward[i][0][1][y]
+                    model.coefcBatt[plant, z+1] = coeff_data[0][1][y]
                 for y, plant in enumerate(hydroPlants):
-                    model.coefcTerm[plant, z+1] = fcf_backward[i][0][0][y]
+                    model.coefcTerm[plant, z+1] = coeff_data[0][0][y]
             else:
-                model.constTerm[z+1] = fcf_backward[i][z][2]
+                model.constTerm[z+1] = coeff_data[z][2]
                 for y, plant in enumerate(batteries):
-                    model.coefcBatt[plant, z+1] = fcf_backward[i][z][1][y]
+                    model.coefcBatt[plant, z+1] = coeff_data[z][1][y]
                 for y, plant in enumerate(hydroPlants):
-                    model.coefcTerm[plant, z+1] = fcf_backward[i][z][0][y]
+                    model.coefcTerm[plant, z+1] = coeff_data[z][0][y]
             
         #model.ctFcf.reconstruct()
 
@@ -380,6 +380,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
             
         # define cuts for states simulation
         cuts_iter, cuts_iter_B = cutsback(i, dict_data, sol_vol, iteration, sol_lvl, db_storage)
+            
 
         for z, plant in enumerate(hydroPlants):
             model.factorH[plant] = dh_factor[z][i-1]
@@ -443,6 +444,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
             phi_delta[2] = delta
 
             feasible_cuts.append(phi_delta)
+                
 
         #######################################################################
 

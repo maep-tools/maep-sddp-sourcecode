@@ -24,33 +24,33 @@ file = '01_example_hydrothermal'       # input file name (DataSystem location)
 
 class Param:
     
-    max_iter = 3              # Maximun number of iterations
-    bnd_stages = 14            # Boundary stages
-    stages = 14 + bnd_stages  # planning horizon: (months + bundary months)
-    seriesBack = 8            # scenarios for the backward phase
-    seriesForw = 8            # scenarios the forward phase
+    max_iter = 7              # Maximun number of iterations
+    bnd_stages = 12            # Boundary stages
+    stages = 132 + bnd_stages  # planning horizon: (months + bundary months)
+    seriesBack = 2            # scenarios for the backward phase
+    seriesForw = 2            # scenarios the forward phase
     
     # Parameters analysis
-    sensDem =  0.85      # Demand factor
-    eps_area = 0.1       # Short-term - significance level area
-    eps_all = 0.1        # Short-term - significance level for the whole system
+    sensDem =  1.0      # Demand factor
+    eps_area = 0.05       # Short-term - significance level area
+    eps_all = 0.05        # Short-term - significance level for the whole system
     eps_risk = 0.15       # long-term risk
-    commit = 0.15         # risk-measure comminment
+    commit = 0.0         # risk-measure comminment
     
     # Stages-horizon analysis (stages)
-    horizon = "monthly"       # "monthly","weekly","daily" (weakly models are inconclusive)
+    horizon = "monthly"       # "monthly","weekly","daily" (weekly models are inconclusive)
     
     # read data options
-    read_data = True         # read the input file
-    param_calc = True        # parameters calculation
+    read_data = False         # read the input file
+    param_calc = False        # parameters calculation
     
     # transmission network
     param_opf = False           # OPF model
     flow_gates = False          # Security constraints (inefficient calculation - inconclusive)
     
     # renewables
-    dist_free = False            # Free distribution model (NO portfolio operation)
-    dist_samples = 9             # sample for p-efficient points calculation
+    dist_free = True            # Free distribution model (NO portfolio operation)
+    dist_samples = 5             # sample for p-efficient points calculation
     wind_model2 = False          # Second model of wind plants (inconcluse)
     portfolio = [True,False]     # [storage-network, storage-wind]
                                  # [False,False] will be turn [True,False], [True,True] option is inconclusive

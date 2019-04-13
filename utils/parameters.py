@@ -85,7 +85,6 @@ def cutsback(stage,dict_data,sol_vol,iteration,sol_lvl,db_storage):
 
     hydroPlants = dict_data['hydroPlants']
     batteries = dict_data['batteries']
-    #b_storage = dict_batt['b_storage']
     battData = dict_data['battData']
     volData = dict_data['volData']
 
