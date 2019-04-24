@@ -243,7 +243,23 @@ def data(confidence, Param, iteration, fcf_Operator):
     
     # conditional constraints
     
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
+        
+        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+        residual = dict_pleps['p_points']
+        
+        numPleps = dict_pleps['plepcount']
+        model.plepNum = pyomo.Set(initialize= list(range(1, numPleps+1)))
+        
+        # coeficient pleps variables
+        model.factorPlep = pyomo.Var(model.Areas, model.Blocks, model.plepNum, domain=pyomo.NonNegativeReals)
+        # aggregated renewables production
+        model.RnwLoad = pyomo.Var(model.Areas, model.Blocks)
+        
+        # p_efficient points
+        model.plep = pyomo.Param(model.Areas, model.Blocks, model.plepNum, mutable=True)
+    
+    if Param.dist_f[1] is True:
         
         dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
         residual = dict_pleps['p_points']
@@ -381,7 +397,13 @@ def data(confidence, Param, iteration, fcf_Operator):
                 model.rationing[y+1] = dd_rationing[y][s]
             
             
-            if Param.dist_free is True:
+            if Param.dist_f[0] is True:
+                # update rationing cost and demand values by stage
+                for area1 in range(numAreas):
+                    for y in lenblk:
+                        for plp in range(numPleps):
+                            model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
+            elif Param.dist_f[1] is True:
                 # update rationing cost and demand values by stage
                 for area1 in range(numAreas):
                     for y in lenblk:

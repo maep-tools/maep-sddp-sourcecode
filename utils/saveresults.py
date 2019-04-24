@@ -48,7 +48,15 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
             else:
                 genwind[k][s][i][j] = 0
 
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
+        
+        for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
+    
+        for i in range(numAreas):
+            for j in lenblk:
+                genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
+    
+    if Param.dist_f[1] is True:
         
         for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
     
@@ -85,7 +93,7 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
     return (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
              lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve,genRnws)
 
-def printresults(Param,sol_scn):
+def printresults(Param, operative_cost):
     
     import pickle
     dict_data = pickle.load(open("savedata/data_save_iter.p", "rb"))
@@ -95,11 +103,12 @@ def printresults(Param,sol_scn):
     from reports_utils.batteries_report import chargedis
     from reports_utils.curves_report import marginalcost, emissions
     from reports_utils.hydroscenarios import hydrogen
-    from utils.file_results import xlsfile
+    from utils.file_results import xlsfile, xlsfileCon 
 
     # write results
     xlsfile(Param)
-
+    xlsfileCon(operative_cost)
+    
     # dispacht
     if Param.curves[0] is True: gendispatch(Param)
 

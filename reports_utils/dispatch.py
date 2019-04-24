@@ -36,7 +36,14 @@ def gendispatch(Param):
     dict_fig ={}
     for z in range(numAreas):
         
-        if Param.dist_free is True:
+        if Param.dist_f[0] is True:
+            y0_org = []
+            for j in range(stages):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genRnFinal[j][z][i]
+                y0_org.append(val_scn/scenarios)
+        elif Param.dist_f[1] is True:
             y0_org = []
             for j in range(stages):
                 val_scn = 0
@@ -118,7 +125,19 @@ def gendispatch(Param):
         y4_txt=[str("{0:.2f}".format(y4/1000))+' GWh' for y4 in y4_org]
         y5_txt=[str("{0:.2f}".format(y5/1000))+' GWh' for y5 in y5_org]
         
-        if Param.dist_free is True:
+        if Param.dist_f[0] is True:
+            Wind = go.Scatter(
+                x=x,
+                y=y0_stck,
+                text=y0_txt,
+                hoverinfo='x+text',
+                mode='lines',
+                line=dict(width=0.5,
+                          color='rgb(224,243,248)'),
+                fill='tonexty',
+                name='Renewables'
+            )
+        elif Param.dist_f[1] is True:
             Wind = go.Scatter(
                 x=x,
                 y=y0_stck,
@@ -231,7 +250,17 @@ def gendispatch(Param):
     ###########################################################################
     
     # each areas dispatch
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
+        y0_org = []
+        for j in range(stages):
+            val_stg = 0
+            for k in range(len(genRnFinal[j])):
+                val_scn = 0
+                for i in range(scenarios):
+                    val_scn += genRnFinal[j][k][i]
+                val_stg += val_scn/scenarios
+            y0_org.append(val_stg)
+    elif Param.dist_f[1] is True:
         y0_org = []
         for j in range(stages):
             val_stg = 0
@@ -318,7 +347,19 @@ def gendispatch(Param):
     y4_txt=[str("{0:.2f}".format(y4/1000))+' GWh' for y4 in y4_org]
     y5_txt=[str("{0:.2f}".format(y5/1000))+' GWh' for y5 in y5_org]
     
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
+        Wind = go.Scatter(
+            x=x,
+            y=y0_stck,
+            text=y0_txt,
+            hoverinfo='x+text',
+            mode='lines',
+            line=dict(width=0.5,
+                      color='rgb(224,243,248)'),
+            fill='tonexty',
+            name='Wind'
+        )
+    elif Param.dist_f[1] is True:
         Wind = go.Scatter(
             x=x,
             y=y0_stck,

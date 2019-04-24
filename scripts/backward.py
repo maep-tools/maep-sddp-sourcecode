@@ -242,7 +242,21 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
 
     # conditional constraints
     
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
+        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+        
+        numPleps = dict_pleps['plepcount']
+        model.plepNum = pyomo.Set(initialize= list(range(1, numPleps+1)))
+        
+        # coeficient pleps variables
+        model.factorPlep = pyomo.Var(model.Areas, model.Blocks, model.plepNum, domain=pyomo.NonNegativeReals)
+        # aggregated renewables production
+        model.RnwLoad = pyomo.Var(model.Areas, model.Blocks)
+    
+        # p_efficient points
+        model.plep = pyomo.Param(model.Areas, model.Blocks, model.plepNum, mutable=True)
+    
+    if Param.dist_f[1] is True:
         dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
         
         numPleps = dict_pleps['plepcount']
@@ -443,8 +457,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
             for z in range(len(batteries)): phi_delta[1][z] = phi_batt_risk[z]
             phi_delta[2] = delta
 
-            feasible_cuts.append(phi_delta)
-                
+            feasible_cuts.append(phi_delta)                
 
         #######################################################################
 

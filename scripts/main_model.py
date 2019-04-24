@@ -46,7 +46,19 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
             from utils.input_wind import energyRealWind
             energyRealWind(dict_data,Param.seriesBack,Param.stages)
 
-        elif Param.dist_free is True:
+        elif Param.dist_f[0] is True:
+            
+            from utils.input_wind_DF import inputDFWind
+            from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
+            from utils.residualload import aggr_energy
+            
+            print('p-Efficient Points calculation ...')
+            inputDFWind(dict_data, Param)
+            inputDFSolarL(dict_data, Param)
+            inputDFSolarD(dict_data, Param)
+            aggr_energy(dict_data, Param)
+        
+        elif Param.dist_f[1] is True:
             
             from utils.input_wind_DF import inputDFWind
             from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
@@ -190,7 +202,7 @@ def optimization(Param):
                 if Param.results is True:
                     print('Writing results ...')
                     # results files and reports
-                    printresults(Param, sol_scn)
+                    printresults(Param, operative_cost)
             
             # partial results
             # print(sum(sol_costs[2])/Param.seriesForw)
@@ -214,7 +226,7 @@ def optimization(Param):
         if Param.results is True:
             print('Writing results ...')
             # results files and reports
-            printresults(Param, sol_scn)
+            printresults(Param, operative_cost)
         
         # print(operative_cost)
     

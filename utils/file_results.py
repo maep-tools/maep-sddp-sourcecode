@@ -1,8 +1,10 @@
+import pickle
+from openpyxl import Workbook
+
 def xlsfile(Param):
 
     # load results
     from statistics import mean
-    import pickle
     import csv
 
     dict_data = pickle.load( open( "savedata/data_save.p", "rb" ) )
@@ -55,8 +57,6 @@ def xlsfile(Param):
     
     lenstg = range(stages); lensc = range(scenarios)
 #    lenareas = range(numAreas)
-
-    from openpyxl import Workbook
 
     # Create file
     wb = Workbook()
@@ -298,7 +298,9 @@ def xlsfile(Param):
                 valueC = 0
                 for x in range(numBlocks):
                     valueC2 = sum(marg_costs[k][j][i][x])
-                    if Param.dist_free is True:
+                    if Param.dist_f[0] is True:
+                        valueC2 = - sum(marg_costs[k][j][i][x])
+                    elif Param.dist_f[1] is True:
                         valueC2 = - sum(marg_costs[k][j][i][x])
                     else:
                         valueC2 = sum(marg_costs[k][j][i][x])
@@ -586,7 +588,7 @@ def xlsfile(Param):
     # Renewables generation by areas
     genRnFinal = [[[[] for y in range(scenarios) ] for z in range(numAreas) ] for x in range(stages)]
     
-    if Param.dist_free is True:
+    if Param.dist_f[0] is True:
         
         ws10_4 = wb.create_sheet(title="RnwsGen")
     
@@ -613,6 +615,33 @@ def xlsfile(Param):
     
         ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
     
+    elif Param.dist_f[1] is True:
+        
+        ws10_4 = wb.create_sheet(title="RnwsGen")
+    
+        for i in range(scenarios):
+            for j in range(stages):
+               for k in range(numAreas):
+                    valueRn = 0
+                    for x in range(numBlocks):
+    
+                        valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
+    
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1),
+                                     value = df_demand[k][j][x] - genRnws[i][j][k][x])
+                        _ = ws10_4.cell(column = 2,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
+                        _ = ws10_4.cell(column=1,
+                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=2, value='Area: '+areasData[0][k])
+                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                     row=3, value='Scenario:'+str(i+1) )
+                    genRnFinal[j][k][i] = valueRn
+    
+        ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
+        
     ###########################################################################
 
 #    ws9 = wb.create_sheet(title="OperativeCost")
@@ -639,3 +668,31 @@ def xlsfile(Param):
                "genBdisBlockFinal":genBdisBlockFinal,"transFinal":transFinal}
 
     pickle.dump(datasol, open( "savedata/html_save.p", "wb" ) )
+
+###############################################################################
+
+def xlsfileCon(operative_cost):
+    
+    from openpyxl import Workbook
+    
+    # Create file
+    wb = Workbook()
+    dest_filename = 'results/Convergence.xlsx'
+
+    ws0 = wb.active
+    ws0.title = "Upper-Lower Bound"
+        
+    for i in range(len(operative_cost[0])):
+        _ = ws0.cell(column=1,row=2+(i+1), value= i+1)
+        _ = ws0.cell(column=2,row=2+(i+1), value= operative_cost[0][i])
+        _ = ws0.cell(column=3,row=2+(i+1), value= operative_cost[1][i])
+    ws0['B2'] = 'Upper bound'
+    ws0['C2'] = 'Lower bound'
+
+    wb.save(filename = dest_filename)
+
+    ###########################################################################
+
+    # datasol = {"genHFinal":genHFinal}
+
+    # pickle.dump(datasol, open( "savedata/html_save_con.p", "wb" ) )

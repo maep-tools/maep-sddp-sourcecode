@@ -17,7 +17,12 @@ def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy)
     numBlocks = dict_format['numBlocks']
     df_inflow = dict_format['inflow_hydro']
     
-    if Param.dist_free is True:
+    # renewables data
+    if Param.dist_f[0] is True:
+        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+        numPleps = dict_pleps['plepcount']
+        residual = dict_pleps['p_points']
+    elif Param.dist_f[1] is True:
         dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
         numPleps = dict_pleps['plepcount']
         residual = dict_pleps['p_points']
@@ -39,7 +44,13 @@ def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy)
         for z in range(len(hydroPlants)):
             model.inflows[hydroPlants[z]] = InflowsHydro[z]
         
-        if Param.dist_free is True:
+        if Param.dist_f[0] is True:
+            # update rationing cost and demand values by stage
+            for area1 in range(numAreas):
+                for y in range(numBlocks):
+                    for plp in range(numPleps):
+                        model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
+        elif Param.dist_f[1] is True:
             # update rationing cost and demand values by stage
             for area1 in range(numAreas):
                 for y in range(numBlocks):

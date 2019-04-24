@@ -21,9 +21,15 @@ def paramlimits(Param):
 
 def valmodel(Param):
     
-    if Param.dist_free is True and Param.wind_model2 is True:
-        sys.exit('The parameters (Class Parameters) "wind_freeD" and "wind_model2" are True at the same time. You need to choose one model.')
+    if Param.dist_f[0] is True and Param.dist_f[1] is True:
+        sys.exit('The parameters (Class Parameters) "P-efficient points" and "MVE method" are True at the same time. You need to choose one to be true or none.')
+        
+    if Param.dist_f[0] is True and Param.wind_model2 is True:
+        sys.exit('The parameters (Class Parameters) "wind_freeD-pefficient" and "wind_model2" are True at the same time. You need to choose one model.')
 
+    if Param.dist_f[1] is True and Param.wind_model2 is True:
+        sys.exit('The parameters (Class Parameters) "wind_freeD-MVE" and "wind_model2" are True at the same time. You need to choose one model.')
+        
     if Param.flow_gates is True or Param.parallel is True or Param.wind_model2 is True:
         sys.exit('The parameters (Class Parameters) "parallel", "wind_model2" or "flow_gates" refers to inconclusive implementations. Please set they as "False".')
 
