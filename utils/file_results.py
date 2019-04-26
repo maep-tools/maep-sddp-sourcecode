@@ -326,36 +326,6 @@ def xlsfile(Param):
 
     ###########################################################################
 
-    # Wind generation by areas
-    genWFinal = [[[[] for y in range(scenarios) ] for z in range(numAreas) ] for x in range(stages)]
-    
-    ws3 = wb.create_sheet(title="WindGen")
-
-    for i in range(scenarios):
-        for j in range(stages):
-           for k in range(numAreas):
-                valueW = 0
-                for x in range(numBlocks):
-
-                    valueW += genwind[i][j][k][x]
-
-                    _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1),
-                                 value=genwind[i][j][k][x])
-                    _ = ws3.cell(column=2,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
-                    _ = ws3.cell(column=1,
-                                 row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
-                    _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=2, value='Area: '+areasData[0][k])
-                    _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                 row=3, value='Scenario:'+str(i+1) )
-                genWFinal[j][k][i] = valueW
-
-    ws3['B3'] = 'block'; ws3['A3'] = 'Stage'
-
-    ###########################################################################
-
     # Batteries generation
     ws4 = wb.create_sheet(title="BatteriesGen")
 
@@ -502,7 +472,7 @@ def xlsfile(Param):
     lineval = int(len(linesData))
     transFinal = [[] for y in range(lineval) ]
     
-    if numAreas is not 1:
+    if numAreas != 1:
 
         scnTransfer = [[[[[] for y in lensc] for y in lenstg] for a in range(numAreas)] for z in range(numAreas)]
 
@@ -587,60 +557,87 @@ def xlsfile(Param):
 
     # Renewables generation by areas
     genRnFinal = [[[[] for y in range(scenarios) ] for z in range(numAreas) ] for x in range(stages)]
-    
-    if Param.dist_f[0] is True:
-        
-        ws10_4 = wb.create_sheet(title="RnwsGen")
-    
-        for i in range(scenarios):
-            for j in range(stages):
-               for k in range(numAreas):
-                    valueRn = 0
-                    for x in range(numBlocks):
-    
-                        valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
-    
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                     row=3+(j+1)*numBlocks-numBlocks+(x+1),
-                                     value = df_demand[k][j][x] - genRnws[i][j][k][x])
-                        _ = ws10_4.cell(column = 2,
-                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
-                        _ = ws10_4.cell(column=1,
-                                     row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                     row=2, value='Area: '+areasData[0][k])
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
-                                     row=3, value='Scenario:'+str(i+1) )
-                    genRnFinal[j][k][i] = valueRn
-    
-        ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
-    
-    elif Param.dist_f[1] is True:
-        
-        ws10_4 = wb.create_sheet(title="RnwsGen")
+
+    if Param.short_term is False:
+            
+        ws3 = wb.create_sheet(title="RnwsGen")
     
         for i in range(scenarios):
             for j in range(stages):
                for k in range(numAreas):
-                    valueRn = 0
+                    valueW = 0
                     for x in range(numBlocks):
     
-                        valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
+                        valueW += genRnws[i][j][k][x]
     
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                        _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
                                      row=3+(j+1)*numBlocks-numBlocks+(x+1),
-                                     value = df_demand[k][j][x] - genRnws[i][j][k][x])
-                        _ = ws10_4.cell(column = 2,
+                                     value=genRnws[i][j][k][x])
+                        _ = ws3.cell(column=2,
                                      row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
-                        _ = ws10_4.cell(column=1,
+                        _ = ws3.cell(column=1,
                                      row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                        _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
                                      row=2, value='Area: '+areasData[0][k])
-                        _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                        _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
                                      row=3, value='Scenario:'+str(i+1) )
-                    genRnFinal[j][k][i] = valueRn
+                    genRnFinal[j][k][i] = valueW
     
-        ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
+        ws3['B3'] = 'block'; ws3['A3'] = 'Stage'
+    else:    
+        if Param.wind_aprox is True:
+            
+            ws3 = wb.create_sheet(title="RnwsGen")
+        
+            for i in range(scenarios):
+                for j in range(stages):
+                   for k in range(numAreas):
+                        valueW = 0
+                        for x in range(numBlocks):
+        
+                            valueW += genwind[i][j][k][x]
+        
+                            _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1),
+                                         value=genwind[i][j][k][x])
+                            _ = ws3.cell(column=2,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
+                            _ = ws3.cell(column=1,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
+                            _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=2, value='Area: '+areasData[0][k])
+                            _ = ws3.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=3, value='Scenario:'+str(i+1) )
+                        genRnFinal[j][k][i] = valueW
+        
+            ws3['B3'] = 'block'; ws3['A3'] = 'Stage'
+            
+        elif Param.wind_model2 is False:
+            
+            ws10_4 = wb.create_sheet(title="RnwsGen")
+        
+            for i in range(scenarios):
+                for j in range(stages):
+                   for k in range(numAreas):
+                        valueRn = 0
+                        for x in range(numBlocks):
+        
+                            valueRn += (df_demand[k][j][x] - genRnws[i][j][k][x])
+        
+                            _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1),
+                                         value = df_demand[k][j][x] - genRnws[i][j][k][x])
+                            _ = ws10_4.cell(column = 2,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1), value=x+1)
+                            _ = ws10_4.cell(column=1,
+                                         row=3+(j+1)*numBlocks-numBlocks+(x+1), value=j+1)
+                            _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=2, value='Area: '+areasData[0][k])
+                            _ = ws10_4.cell(column=2+(i+1)+(k+1)*scenarios-scenarios,
+                                         row=3, value='Scenario:'+str(i+1) )
+                        genRnFinal[j][k][i] = valueRn
+        
+            ws10_4['B3'] = 'block'; ws10_4['A3'] = 'Stage'
         
     ###########################################################################
 
@@ -661,11 +658,11 @@ def xlsfile(Param):
 
     ###########################################################################
 
-    datasol = {"genHFinal":genHFinal,"genTFinal":genTFinal,"genWFinal":genWFinal,
+    datasol = {"genHFinal":genHFinal,"genTFinal":genTFinal,"genRnFinal":genRnFinal,
                "genDFinal":genDFinal,"genBFinal":genBFinal,"genMFinal":genMFinal,
-               "genSFinal":genSFinal,"emssiFinal":emssiFinal,"genRnFinal":genRnFinal,
-               "genBdisFinal":genBdisFinal,"genBBlockFinal":genBBlockFinal,
-               "genBdisBlockFinal":genBdisBlockFinal,"transFinal":transFinal}
+               "genSFinal":genSFinal,"emssiFinal":emssiFinal,"genBdisFinal":genBdisFinal,
+               "genBBlockFinal":genBBlockFinal,"genBdisBlockFinal":genBdisBlockFinal,
+               "transFinal":transFinal}
 
     pickle.dump(datasol, open( "savedata/html_save.p", "wb" ) )
 

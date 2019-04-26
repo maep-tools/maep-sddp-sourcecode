@@ -10,7 +10,6 @@ def gendispatch(Param):
     genHFinal = dict_charts['genHFinal']
     genTFinal = dict_charts['genTFinal']
     genSFinal = dict_charts['genSFinal']
-    genWFinal = dict_charts['genWFinal']
     genDFinal = dict_charts['genDFinal']
     genBFinal = dict_charts['genBFinal']
     genRnFinal = dict_charts['genRnFinal']
@@ -36,27 +35,28 @@ def gendispatch(Param):
     dict_fig ={}
     for z in range(numAreas):
         
-        if Param.dist_f[0] is True:
+        if Param.short_term is False:
             y0_org = []
             for j in range(stages):
                 val_scn = 0
                 for i in range(scenarios):
                     val_scn += genRnFinal[j][z][i]
-                y0_org.append(val_scn/scenarios)
-        elif Param.dist_f[1] is True:
-            y0_org = []
-            for j in range(stages):
-                val_scn = 0
-                for i in range(scenarios):
-                    val_scn += genRnFinal[j][z][i]
-                y0_org.append(val_scn/scenarios)
+                y0_org.append(val_scn/scenarios)     
         else:
-            y0_org = []
-            for j in range(stages):
-                val_scn = 0
-                for i in range(scenarios):
-                    val_scn += genWFinal[j][z][i]
-                y0_org.append(val_scn/scenarios)
+            if Param.dist_f[0] is True:
+                y0_org = []
+                for j in range(stages):
+                    val_scn = 0
+                    for i in range(scenarios):
+                        val_scn += genRnFinal[j][z][i]
+                    y0_org.append(val_scn/scenarios)
+            elif Param.wind_aprox is True:
+                y0_org = []
+                for j in range(stages):
+                    val_scn = 0
+                    for i in range(scenarios):
+                        val_scn += genRnFinal[j][z][i]
+                    y0_org.append(val_scn/scenarios)
             
         y1_org = []
         for j in range(stages):
@@ -125,8 +125,7 @@ def gendispatch(Param):
         y4_txt=[str("{0:.2f}".format(y4/1000))+' GWh' for y4 in y4_org]
         y5_txt=[str("{0:.2f}".format(y5/1000))+' GWh' for y5 in y5_org]
         
-        if Param.dist_f[0] is True:
-            Wind = go.Scatter(
+        Renw = go.Scatter(
                 x=x,
                 y=y0_stck,
                 text=y0_txt,
@@ -136,31 +135,7 @@ def gendispatch(Param):
                           color='rgb(224,243,248)'),
                 fill='tonexty',
                 name='Renewables'
-            )
-        elif Param.dist_f[1] is True:
-            Wind = go.Scatter(
-                x=x,
-                y=y0_stck,
-                text=y0_txt,
-                hoverinfo='x+text',
-                mode='lines',
-                line=dict(width=0.5,
-                          color='rgb(224,243,248)'),
-                fill='tonexty',
-                name='Renewables'
-            )
-        else:
-            Wind = go.Scatter(
-                x=x,
-                y=y0_stck,
-                text=y0_txt,
-                hoverinfo='x+text',
-                mode='lines',
-                line=dict(width=0.5,
-                          color='rgb(224,243,248)'),
-                fill='tonexty',
-                name='Wind'
-            )
+        )
                 
         Batteries = go.Scatter(
             x=x,
@@ -223,7 +198,7 @@ def gendispatch(Param):
             fill='tonexty',
             name='Deficit'
         )
-        data = [Wind, Batteries, Small, Hydro, Thermal, Deficit]#, Thermal, Hydro, Small, Batteries, Wind]
+        data = [Renw, Batteries, Small, Hydro, Thermal, Deficit]#, Thermal, Hydro, Small, Batteries, Wind]
         layout = go.Layout(
         autosize=False,
         width=800,
@@ -250,36 +225,15 @@ def gendispatch(Param):
     ###########################################################################
     
     # each areas dispatch
-    if Param.dist_f[0] is True:
-        y0_org = []
-        for j in range(stages):
-            val_stg = 0
-            for k in range(len(genRnFinal[j])):
-                val_scn = 0
-                for i in range(scenarios):
-                    val_scn += genRnFinal[j][k][i]
-                val_stg += val_scn/scenarios
-            y0_org.append(val_stg)
-    elif Param.dist_f[1] is True:
-        y0_org = []
-        for j in range(stages):
-            val_stg = 0
-            for k in range(len(genRnFinal[j])):
-                val_scn = 0
-                for i in range(scenarios):
-                    val_scn += genRnFinal[j][k][i]
-                val_stg += val_scn/scenarios
-            y0_org.append(val_stg)
-    else:
-        y0_org = []
-        for j in range(stages):
-            val_stg = 0
-            for k in range(len(genWFinal[j])):
-                val_scn = 0
-                for i in range(scenarios):
-                    val_scn += genWFinal[j][k][i]
-                val_stg += val_scn/scenarios
-            y0_org.append(val_stg)
+    y0_org = []
+    for j in range(stages):
+        val_stg = 0
+        for k in range(len(genRnFinal[j])):
+            val_scn = 0
+            for i in range(scenarios):
+                val_scn += genRnFinal[j][k][i]
+            val_stg += val_scn/scenarios
+        y0_org.append(val_stg)
             
     y1_org = []
     for j in range(stages):

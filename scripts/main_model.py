@@ -17,7 +17,7 @@ def data_consistency(Param):
     paramlimits(Param)
     valmodel(Param)
 
-def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
+def parameters(Param): 
     
     # Load the dictionary back from the pickle file
     dict_data = pickle.load(open("savedata/data_save.p", "rb"))
@@ -39,41 +39,59 @@ def parameters(Param): #param_calculation,sensDem,stages,eps_area,eps_all):
         
         # solar radiation data
         from utils.input_solar import inputsolar
-        inputsolar(dict_data, Param.stages)
+        inputsolar(dict_data, Param)
         
-        if Param.wind_model2 is True:
-
-            from utils.input_wind import energyRealWind
-            energyRealWind(dict_data,Param.seriesBack,Param.stages)
-
-        elif Param.dist_f[0] is True:
+        # short-term analysis
+        if Param.short_term is False:
+            # Average analysis
             
-            from utils.input_wind_DF import inputDFWind
-            from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
-            from utils.residualload import aggr_energy
-            
-            print('p-Efficient Points calculation ...')
-            inputDFWind(dict_data, Param)
-            inputDFSolarL(dict_data, Param)
-            inputDFSolarD(dict_data, Param)
-            aggr_energy(dict_data, Param)
-        
-        elif Param.dist_f[1] is True:
-            
-            from utils.input_wind_DF import inputDFWind
-            from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
-            from utils.residualload import aggr_energy
-            
-            print('p-Efficient Points calculation ...')
-            inputDFWind(dict_data, Param)
-            inputDFSolarL(dict_data, Param)
-            inputDFSolarD(dict_data, Param)
-            aggr_energy(dict_data, Param)
-            
+            from utils.input_average import inputAvrWind
+            from utils.input_average import inputAvrSolarL, inputAvrSolarD
+            from utils.residualload import aggr_avr_energy
+                
+            inputAvrWind(dict_data, Param)
+            inputAvrSolarL(dict_data, Param)
+            inputAvrSolarD(dict_data, Param)
+            aggr_avr_energy(dict_data, Param)
+                
         else:
+            # short-term models
             
-            from utils.input_wind import inputInflowWind
-            inputInflowWind(dict_data, Param.stages, Param.eps_area, Param.eps_all)
+            if Param.wind_model2 is True:
+    
+                from utils.input_wind import energyRealWind
+                energyRealWind(dict_data,Param.seriesBack,Param.stages)
+            
+            # p-Efficient points calculation
+            elif Param.dist_f[0] is True:
+                
+                from utils.input_wind_DF import inputDFWind
+                from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
+                from utils.residualload import aggr_energy
+                
+                print('p-Efficient Points calculation ...')
+                inputDFWind(dict_data, Param)
+                inputDFSolarL(dict_data, Param)
+                inputDFSolarD(dict_data, Param)
+                aggr_energy(dict_data, Param)
+            
+            # MVE method
+            elif Param.dist_f[1] is True:
+                
+                from utils.input_wind_DF import inputDFWind
+                from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
+                from utils.residualload import aggr_energy
+                
+                print('p-Efficient Points calculation ...')
+                inputDFWind(dict_data, Param)
+                inputDFSolarL(dict_data, Param)
+                inputDFSolarD(dict_data, Param)
+                aggr_energy(dict_data, Param)
+                
+            elif Param.wind_aprox is True:
+                
+                from utils.input_wind import inputInflowWind
+                inputInflowWind(dict_data, Param)
         
         from utils.input_others import inputbatteries, inputlines
         inputbatteries(dict_data, Param.stages)
@@ -197,12 +215,15 @@ def optimization(Param):
             if iteration == Param.max_iter or confidence == 2:
                 datafcf = {"fcf_backward":fcf_backward, "sol_vol":sol_vol, "sol_lvl":sol_lvl, 'sol_scn':sol_scn}
                 pickle.dump(datafcf, open("savedata/fcfdata.p", "wb"))
+                
+                datafcf = {"operative_cost":operative_cost}
+                pickle.dump(datafcf, open("savedata/operativecost.p", "wb"))
     
                 # generate report
                 if Param.results is True:
                     print('Writing results ...')
                     # results files and reports
-                    printresults(Param, operative_cost)
+                    printresults(Param)
             
             # partial results
             # print(sum(sol_costs[2])/Param.seriesForw)
@@ -221,12 +242,15 @@ def optimization(Param):
         # Saver results
         confidence, op_cost, op_inf = optimality.data(sol_costs,Param.seriesForw)
         operative_cost[0].append(op_cost), operative_cost[1].append(op_inf)
+        
+        datafcf = {"operative_cost":operative_cost}
+        pickle.dump(datafcf, open("savedata/operativecost.p", "wb"))
     
         # generate report
         if Param.results is True:
             print('Writing results ...')
             # results files and reports
-            printresults(Param, operative_cost)
+            printresults(Param)
         
         # print(operative_cost)
     
@@ -240,5 +264,5 @@ def optimization(Param):
     
             print('Writing results ...')
             # results files and reports
-            printresults(Param, sol_scn)
+            printresults(Param)
             

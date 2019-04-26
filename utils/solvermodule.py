@@ -1,5 +1,5 @@
 
-def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy):
+def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_renenergy):
 
 #    import cProfile, pstats, io
 #    #from pstats import SortKey
@@ -18,16 +18,19 @@ def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy)
     df_inflow = dict_format['inflow_hydro']
     
     # renewables data
-    if Param.dist_f[0] is True:
-        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
-        numPleps = dict_pleps['plepcount']
-        residual = dict_pleps['p_points']
-    elif Param.dist_f[1] is True:
-        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
-        numPleps = dict_pleps['plepcount']
-        residual = dict_pleps['p_points']
+    if Param.short_term is False:
+        df_renenergy = dict_renenergy['average_vec']
     else:
-        df_windenergy = dict_windenergy['windenergy_area']
+        if Param.dist_f[0] is True:
+            dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+            numPleps = dict_pleps['plepcount']
+            residual = dict_pleps['p_points']
+        elif Param.dist_f[1] is True:
+            dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
+            numPleps = dict_pleps['plepcount']
+            residual = dict_pleps['p_points']
+        elif Param.wind_aprox is True:
+            df_renenergy = dict_renenergy['windenergy_area']
         
     # save data
     objective_list = []; total_obj = 0
@@ -44,23 +47,32 @@ def backseq(Param,i,dict_data,dict_format,model,opt,none1,none2,dict_windenergy)
         for z in range(len(hydroPlants)):
             model.inflows[hydroPlants[z]] = InflowsHydro[z]
         
-        if Param.dist_f[0] is True:
-            # update rationing cost and demand values by stage
-            for area1 in range(numAreas):
-                for y in range(numBlocks):
-                    for plp in range(numPleps):
-                        model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
-        elif Param.dist_f[1] is True:
-            # update rationing cost and demand values by stage
-            for area1 in range(numAreas):
-                for y in range(numBlocks):
-                    for plp in range(numPleps):
-                        model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
-        else:
+        if Param.short_term is False:
+            
             # wind energy
             for z in range(numAreas):
                 for y in range(numBlocks):
-                    model.meanWind[z+1,y+1] = df_windenergy[z][i-1][k][y]
+                    model.meanRen[z+1,y+1] = df_renenergy[z][i-1][k][y]
+            
+        else:
+        
+            if Param.dist_f[0] is True:
+                # update rationing cost and demand values by stage
+                for area1 in range(numAreas):
+                    for y in range(numBlocks):
+                        for plp in range(numPleps):
+                            model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
+            elif Param.dist_f[1] is True:
+                # update rationing cost and demand values by stage
+                for area1 in range(numAreas):
+                    for y in range(numBlocks):
+                        for plp in range(numPleps):
+                            model.plep[area1+1, y+1, plp+1] = residual[i-1][k][area1][y][plp]
+            elif Param.wind_aprox is True:
+                # wind energy
+                for z in range(numAreas):
+                    for y in range(numBlocks):
+                        model.meanRen[z+1,y+1] = df_renenergy[z][i-1][k][y]
             
         # Reconstruct the instance and solve
         #model.ctVol.reconstruct(); model.ctGenW.reconstruct()
@@ -148,7 +160,7 @@ def backpar(scenarios,i,dict_data,dict_format,model,none,SolverFactory,
                 model.inflows[hydroPlants[z]] = InflowsHydro[z]
             for z in range(numareas):
                 for y in range(numBlocks):
-                    model.meanWind[z+1,y+1] = df_windenergy[z][i-1][k][y]
+                    model.meanRen[z+1,y+1] = df_windenergy[z][i-1][k][y]
 
             # Reconstruct the instance and solve
             #instance.ctVol.reconstruct(); instance.ctGenW.reconstruct()

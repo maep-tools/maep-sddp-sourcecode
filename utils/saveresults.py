@@ -16,6 +16,7 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
     for gen_S in [instance.prodS]: Sobject = getattr(instance, str(gen_S))
     for gen_H in [instance.prodH]: Hobject = getattr(instance, str(gen_H))
     for gen_W in [instance.prodW]: Wobject = getattr(instance, str(gen_W))
+    for gen_R in [instance.prodR]: Robject = getattr(instance, str(gen_R))
     for spl_W in [instance.spillW]: sWobject = getattr(instance, str(spl_W))
     for gen_B in [instance.prodB]: Bobject = getattr(instance, str(gen_B))
     for gen_D in [instance.deficit]: Dobject = getattr(instance, str(gen_D))
@@ -39,38 +40,42 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
             genHydro[k][s][i][j] = Hobject[plant, j+1].value
             spillHydro[k][s][i][j] = sHobject[plant, j+1].value
 
+    if Param.short_term is False:
+        for i in range(numAreas):
+            for j in lenblk:
+                if i+1 in rnwArea:
+                    genRnws[k][s][i][j] = Robject[i+1, j+1].value
+                else:
+                    genRnws[k][s][i][j] = 0
+    else:    
+        if Param.dist_f[0] is True:
+            
+            for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
+        
+            for i in range(numAreas):
+                for j in lenblk:
+                    genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
+        
+        elif Param.wind_aprox is True:
+            for i in range(numAreas):
+                for j in lenblk:
+                    if i+1 in rnwArea:
+                        genwind[k][s][i][j] = Wobject[i+1, j+1].value
+                    else:
+                        genwind[k][s][i][j] = 0
+    
     for i in range(numAreas):
         for j in lenblk:
             genDeficit[i][k][s][j] = Dobject[i+1,j+1].value
             spillwind[k][s][i][j] = sWobject[i+1, j+1].value
-            if i+1 in rnwArea:
-                genwind[k][s][i][j] = Wobject[i+1, j+1].value
-            else:
-                genwind[k][s][i][j] = 0
-
-    if Param.dist_f[0] is True:
-        
-        for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
-    
-        for i in range(numAreas):
-            for j in lenblk:
-                genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
-    
-    if Param.dist_f[1] is True:
-        
-        for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
-    
-        for i in range(numAreas):
-            for j in lenblk:
-                genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
-                
+                        
     for i, plant in enumerate(batteries):
         lvlBatteries[k][s][i] = lBobject[plant].value
         for j in lenblk:
             genBatteries[k][s][i][j] = Bobject[plant, j+1].value
             loadBatteries[k][s][i][j] = cBobject[plant,j+1].value
 
-    if numAreas is not 1:
+    if numAreas != 1:
         for i in range(len(linesData)):
             org = linesData[i][0]; dest = linesData[i][1]
             for j in lenblk:
@@ -93,10 +98,11 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
     return (genThermal,genHydro,genBatteries,genDeficit,loadBatteries,lvlBatteries,
              lvlHydro,linTransfer,spillHydro,genwind,spillwind,genSmall,emissCurve,genRnws)
 
-def printresults(Param, operative_cost):
+def printresults(Param):
     
     import pickle
     dict_data = pickle.load(open("savedata/data_save_iter.p", "rb"))
+    opert_data = pickle.load(open("savedata/operativecost.p", "rb"))
     numAreas = dict_data['numAreas']
     
     from reports_utils.dispatch import gendispatch, genrenewables, transferareas
@@ -107,7 +113,7 @@ def printresults(Param, operative_cost):
 
     # write results
     xlsfile(Param)
-    xlsfileCon(operative_cost)
+    xlsfileCon(opert_data['operative_cost'])
     
     # dispacht
     if Param.curves[0] is True: gendispatch(Param)
@@ -125,7 +131,7 @@ def printresults(Param, operative_cost):
     if Param.curves[4][0] is True: chargedis(Param)
     
     # renewables generation
-    if numAreas is not 1:
+    if numAreas != 1:
         if Param.curves[5] is True: transferareas(Param)
         
     if Param.curves[6] is True and Param.emss_curve is True: emissions(Param)

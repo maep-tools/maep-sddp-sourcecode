@@ -9,7 +9,7 @@ def inputDFWind(dict_data,Param):
     windPlants = dict_data['windPlants']
     indicesData = dict_data['indicesData']
     blocksData = dict_data['blocksData']
-    scenarios = dict_sim['scenarios']
+    scenarios = Param.seriesForw # dict_sim['scenarios'] 
     speed_wind = dict_wind['speed_wind']
     windData = dict_data['windData']
     numAreas = dict_data['numAreas']

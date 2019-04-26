@@ -33,10 +33,16 @@ def valmodel(Param):
     if Param.flow_gates is True or Param.parallel is True or Param.wind_model2 is True:
         sys.exit('The parameters (Class Parameters) "parallel", "wind_model2" or "flow_gates" refers to inconclusive implementations. Please set they as "False".')
 
+    if Param.seriesBack > Param.seriesForw:
+        sys.exit('The parameters (Class Parameters) "seriesBack" must be hihger than "seriesForw".')
+        
 def areavalidation(area,substring):
     
     sys.exit('Area or node "' +str(area) + '" does not exist or it is inactive - sheet '+substring)
     
-def scenariosvalidation(scenarios,scenariosSim):
-    if scenariosSim > scenarios:
-        sys.exit('Simulation parameter exceeds data, '+str(scenariosSim)+' scenarios vs '+str(scenarios)+' in data.')
+def scenariosvalidation(scenarios,Param,resource):
+
+    if Param.seriesBack > scenarios:
+        sys.exit('Simulation parameter exceeds data, '+str(Param.seriesBack)+' scenarios backward vs '+str(scenarios)+' in data for '+resource+' inflows')
+    if Param.seriesForw > scenarios:
+        sys.exit('Simulation parameter exceeds data, '+str(Param.seriesForw)+' scenarios forward vs '+str(scenarios)+' in data for '+resource+' inflows')

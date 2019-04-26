@@ -26,14 +26,14 @@ class Param:
     
     max_iter = 3              # Maximun number of iterations
     bnd_stages = 2            # Boundary stages
-    stages = 6 + bnd_stages  # planning horizon: (months + bundary months)
+    stages = 10 + bnd_stages  # planning horizon: (months + bundary months)
     seriesBack = 1            # scenarios for the backward phase
     seriesForw = 1            # scenarios the forward phase
     
     # Parameters analysis
     sensDem =  1.0      # Demand factor
-    eps_area = 0.5       # Short-term - significance level area
-    eps_all = 0.5        # Short-term - significance level for the whole system
+    eps_area = 0.05       # Short-term - significance level area
+    eps_all = 0.05        # Short-term - significance level for the whole system
     eps_risk = 0.15       # long-term risk
     commit = 0.0         # risk-measure comminment
     
@@ -41,19 +41,25 @@ class Param:
     horizon = "monthly"       # "monthly","weekly","daily" (weekly models are inconclusive)
     
     # read data options
-    read_data = False         # read the input file
+    read_data = True         # read the input file
     param_calc = True         # parameters calculation
     
     # transmission network
     param_opf = False           # OPF model
     flow_gates = False          # Security constraints (inefficient calculation - inconclusive)
     
+    # Short-term analysis
+    short_term = False          # All short-term models are ignored
+    
+    # Short-term models
     # Dist-free: [P-efficient points, MVE method]
     dist_f = [False,False]        # Free distribution model (NO portfolio operation)
     dist_samples = 6             # sample for p-efficient points calculation
-    
-    # renewables additional models
+    # renewables additional models (ONLY for wind power integration)
+    wind_aprox = False            # Distribution form assupmtions
     wind_model2 = False          # Second model of wind plants (inconcluse)
+    
+    # portfolio operation
     portfolio = [True,False]     # [storage-network, storage-wind]
                                  # [False,False] will be turn [True,False], [True,True] option is inconclusive
     # emissions

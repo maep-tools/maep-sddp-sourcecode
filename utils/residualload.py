@@ -1,20 +1,19 @@
+import pickle
+
 def aggr_energy(dict_data, Param):
     
-    import pickle
     import numpy as np
-    
     from utils.mipproblem import fisrt_vec, pelp_vec
     
     dict_wind = pickle.load( open( "savedata/windspeed_save.p", "rb" ) )
     dict_solD = pickle.load( open( "savedata/solarradDist.p", "rb" ) )
     dict_solL = pickle.load( open( "savedata/solarradLarge.p", "rb" ) )
-    dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
     dict_format = pickle.load(open("savedata/format_save.p", "rb"))
     
     # data
     blocksData = dict_data['blocksData']
     numAreas = dict_data['numAreas']
-    scenarios = dict_sim['scenarios']
+    scenarios = Param.seriesForw
     df_demand = dict_format['demand']
     
     ###########################################################################
@@ -157,3 +156,68 @@ def aggr_energy(dict_data, Param):
     
     DataDictionary = {"p_points":ppoints_vec,"plepcount": plep_count,"pefficient_vec":pefficient_vec}
     pickle.dump(DataDictionary, open( "savedata/pleps_save.p", "wb" ) )
+
+def aggr_avr_energy(dict_data, Param):
+    
+    dict_wind = pickle.load( open( "savedata/windspeed_save.p", "rb" ) )
+    dict_solD = pickle.load( open( "savedata/solarradDist.p", "rb" ) )
+    dict_solL = pickle.load( open( "savedata/solarradLarge.p", "rb" ) )
+    
+    # data
+    blocksData = dict_data['blocksData']
+    numAreas = dict_data['numAreas']
+    scenarios = Param.seriesForw
+    
+    ###########################################################################
+    
+    # renewables area
+    wind_area = dict_wind['RnwArea']
+    sol_dist = dict_solD['RnwArea']
+    sol_large = dict_solL['RnwArea']
+    RnwArea = list(set( wind_area + sol_dist + sol_large))
+    
+    wind_energy = dict_wind['power_area_energy']
+    solD_energy = dict_solD['power_area_energy']
+    solL_energy = dict_solL['power_area_energy']
+    
+    # Areas - energy - samples
+    power_area_energy = []
+    for area in range(len(RnwArea)):
+        
+        ene_area = []
+        if RnwArea[area] in wind_area: 
+            indexP = wind_area.index(RnwArea[area])
+            ene_area.append(wind_energy[indexP])
+        if RnwArea[area] in sol_dist:
+            indexP = sol_dist.index(RnwArea[area])
+            ene_area.append(solD_energy[indexP])
+        if RnwArea[area] in sol_large:    
+            indexP = sol_large.index(RnwArea[area])
+            ene_area.append(solL_energy[indexP])
+            
+        power_temp = [[[[] for x in range(len(blocksData[0])) ] for y in range(scenarios)] for z in range(Param.stages)]
+        
+        for n in range(Param.stages): 
+            for k in range(scenarios): 
+                for j in range(len(blocksData[0])): 
+                    sum_p = 0
+                    for i in range(len(ene_area)):
+                        sum_p += ene_area[i][n][k][j]
+                    
+                    power_temp[n][k][j]= sum_p/1e6
+                    
+        # save data areas
+        power_area_energy.append(power_temp)
+    
+    power_area = [[] for y in range(numAreas)]
+    for area in range(numAreas):
+        if area+1 in RnwArea:
+            indexP = RnwArea.index(area+1)
+            power_area[area] = power_area_energy[indexP]
+        else:
+            power_area[area] = [[[0] *len(blocksData[0]) for y in range(scenarios)] for z in range(Param.stages)]
+            
+    ###########################################################################
+    
+    DataDictionary = {"average_vec":power_area,"RnwArea":RnwArea}
+    pickle.dump(DataDictionary, open( "savedata/average_save.p", "wb" ) )

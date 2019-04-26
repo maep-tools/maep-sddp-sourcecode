@@ -36,7 +36,6 @@ def data(confidence, Param, iteration, fcf_Operator):
     dh_limits = dict_hydro['u_limit']
     dict_batt = pickle.load(open("savedata/batt_save.p", "rb"))
     dict_lines = pickle.load(open("savedata/lines_save.p", "rb"))
-    dict_windenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
     dict_wind = pickle.load(open("savedata/wind_hat_0.p", "rb"))
     dict_format = pickle.load(open("savedata/format_save.p", "rb"))
     df_demand = dict_format['demand']
@@ -48,6 +47,11 @@ def data(confidence, Param, iteration, fcf_Operator):
     dd_emissions = dict_data['emissionsData']
     b_storageData = dict_data['b_storageData']
 
+    if Param.short_term is False:
+        dict_renenergy = pickle.load(open("savedata/average_save.p", "rb"))
+    else:
+        dict_renenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
+        
     # data from dictionaries
     numAreas = dict_data['numAreas']
     numBlocks = dict_format['numBlocks']
@@ -60,7 +64,7 @@ def data(confidence, Param, iteration, fcf_Operator):
     volData = dict_data['volData']
     thermalData = dict_data['thermalData']
     demandArea = dict_format['demandArea']
-    rnwArea = dict_windenergy['RnwArea']
+    rnwArea = dict_renenergy['RnwArea']
     
     circuits = dict_data['linesData']
     fcircuits = list(range(1, len(circuits)+1))
@@ -184,7 +188,7 @@ def data(confidence, Param, iteration, fcf_Operator):
     # inflows for each stage
     model.inflows = pyomo.Param(model.Hydro, mutable=True)
     # wind inflows for each stage
-    model.meanWind = pyomo.Param(model.Areas, model.Blocks, mutable=True)
+    model.meanRen = pyomo.Param(model.Areas, model.Blocks, mutable=True)
     # production factor for each hydro plant
     model.factorH = pyomo.Param(model.Hydro, mutable=True)
     # Hydro plants by area
@@ -396,24 +400,29 @@ def data(confidence, Param, iteration, fcf_Operator):
             for y in range(numAreas):
                 model.rationing[y+1] = dd_rationing[y][s]
             
-            
-            if Param.dist_f[0] is True:
-                # update rationing cost and demand values by stage
-                for area1 in range(numAreas):
-                    for y in lenblk:
-                        for plp in range(numPleps):
-                            model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
-            elif Param.dist_f[1] is True:
-                # update rationing cost and demand values by stage
-                for area1 in range(numAreas):
-                    for y in lenblk:
-                        for plp in range(numPleps):
-                            model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
-            else:
+            if Param.short_term is False:
                 # wind energy
                 for z in lenblk:
                     for y in range(numAreas):
-                        model.meanWind[y+1,z+1] = dict_windenergy['windenergy_area'][y][s][k][z]
+                        model.meanRen[y+1,z+1] = dict_renenergy['average_vec'][y][s][k][z]
+            else:
+                if Param.dist_f[0] is True:
+                    # update rationing cost and demand values by stage
+                    for area1 in range(numAreas):
+                        for y in lenblk:
+                            for plp in range(numPleps):
+                                model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
+                elif Param.dist_f[1] is True:
+                    # update rationing cost and demand values by stage
+                    for area1 in range(numAreas):
+                        for y in lenblk:
+                            for plp in range(numPleps):
+                                model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
+                elif Param.wind_aprox is True:
+                    # wind energy
+                    for z in lenblk:
+                        for y in range(numAreas):
+                            model.meanRen[y+1,z+1] = dict_renenergy['windenergy_area'][y][s][k][z]
 
             for z in lenblk:
                 for y in range(numAreas):

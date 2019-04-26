@@ -43,10 +43,12 @@ def inputdata(dict_data,Param):
     
     numBlocks = len(blocksData[0]) # Number of blocks
     stages = len(demandData[0]) # number of stages
-    scenarios = int((len(inflowData[0])-1)/stages) # inflow scenarios
+    scenariosHydro = max(inflowData[1][1:]) # inflow scenarios
+    scenariosBio = max(inflowBioData[1][1:])
     
     # scenarios validation
-    scenariosvalidation(scenarios,Param.seriesBack)
+    scenariosvalidation(scenariosHydro,Param,'Hydro')
+    scenariosvalidation(scenariosBio,Param,'Biomass')
     
     inflow_hydro = [[[] for _ in range(2) ] for _ in range(len(hydroPlants))]
     inflow_biomass = [[[] for _ in range(2) ] for _ in range(len(biomassPlants))]
@@ -85,7 +87,7 @@ def inputdata(dict_data,Param):
         
         # Series hydro
         for k in range(2,2+len(hydroPlants)):
-            stage_inflow = inflowData[k][scenarios*i+1:scenarios*(i+1)+1]
+            stage_inflow = inflowData[k][scenariosHydro*i+1:scenariosHydro*(i+1)+1]
             stage_inflow[:] = [x*(aux*3600*1e-6) for x in stage_inflow]
             if volData[7][k-2] > i+1: # initial stage for inflows
                 stage_inflow[:] = [x*0 for x in stage_inflow]
@@ -94,7 +96,7 @@ def inputdata(dict_data,Param):
         
         # Series biomass
         for k in range(2,2+len(biomassPlants)):
-            stage_inflow = inflowBioData[k][scenarios*i+1:scenarios*(i+1)+1]
+            stage_inflow = inflowBioData[k][scenariosBio*i+1:scenariosBio*(i+1)+1]
             if biomassData[11][k-2] > i+1: # initial stage for inflows
                 stage_inflow[:] = [x*0 for x in stage_inflow]
             aux_inflow = np.hstack((inflow_biomass[k-2][1], stage_inflow))        
@@ -127,13 +129,13 @@ def inputdata(dict_data,Param):
         
     # Hydro inflow series
     for i in range(len(hydroPlants)):
-        aux_resize = np.resize(inflow_hydro[i][1], [stages,scenarios]) 
+        aux_resize = np.resize(inflow_hydro[i][1], [stages,scenariosHydro]) 
         inflow_hydro[i][0] = inflowData[2+i][0] 
         inflow_hydro[i][1] = aux_resize
     
     # Biomass inflow series
     for i in range(len(biomassPlants)):
-        aux_resize = np.resize(inflow_biomass[i][1], [stages,scenarios]) 
+        aux_resize = np.resize(inflow_biomass[i][1], [stages,scenariosBio]) 
         inflow_biomass[i][0] = inflowBioData[2+i][0] 
         inflow_biomass[i][1] = aux_resize
         
@@ -222,7 +224,8 @@ def inputdata(dict_data,Param):
     pickle.dump(DataDictionary, open( "savedata/format_save.p", "wb" ) )
     
     # export - parameter's data
-    DataDictionary2 = {"stagesData":stages,"scenarios":scenarios,"yearvector":yearvector}
+    DataDictionary2 = {"stagesData":stages,"scenariosHydro":scenariosHydro,"scenariosBio":scenariosBio,
+                       "yearvector":yearvector}
     pickle.dump(DataDictionary2, open( "savedata/format_sim_save.p", "wb" ) )
     
     return DataDictionary, DataDictionary2

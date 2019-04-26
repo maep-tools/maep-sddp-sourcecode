@@ -1,8 +1,9 @@
 
-def inputsolar(dict_data,stages):
+def inputsolar(dict_data,Param):
     
     import pickle
     import numpy as np
+    from utils.paramvalidation import scenariosvalidation
     
     # import data
     dict_sim = pickle.load( open( "savedata/format_sim_save.p", "rb" ) )
@@ -10,8 +11,11 @@ def inputsolar(dict_data,stages):
     # data
     inflowSolarData = dict_data['inflowSolarData']
     numAreas = dict_data['numAreas']
-    scenarios = dict_sim['scenarios']
+    scenariosSolar = max(inflowSolarData[1][1:])
     yearvector = dict_sim['yearvector']
+    
+    # validation
+    scenariosvalidation(scenariosSolar,Param,'solar irradiance')
     
     sPlants = [dict_data['Solar_large'], dict_data['Solar_dist']]
     sData = [dict_data['SlargeData'], dict_data['SdistData']]
@@ -53,13 +57,11 @@ def inputsolar(dict_data,stages):
         for n in range(len(sPlants[typS])):
             index = stationData.index(sData[typS][0][n])
             inflowData.append(inflowSolarData[2+index])
-                
-        totscenarios = max(inflowSolarData[1][1:])
         
-        for i in range(stages):
+        for i in range(Param.stages):
             # Series radiation
             for k in range(len(sPlants[typS])):
-                stage_solar = inflowData[k][totscenarios*i+1:totscenarios*i+1+scenarios]
+                stage_solar = inflowData[k][scenariosSolar*i+1:scenariosSolar*i+1+scenariosSolar]
                 if sData[typS][indcStage[typS]][k] > i+1: # initial stage for inflows
                     stage_solar[:] = [x*0 for x in stage_solar]
                 aux_solar = np.hstack((rad_solar[k][1], stage_solar))        
@@ -67,7 +69,7 @@ def inputsolar(dict_data,stages):
                 
         # inflow series
         for i in range(len(sPlants[typS])):
-            aux_resize_s = np.resize(rad_solar[i][1], [stages,scenarios]) 
+            aux_resize_s = np.resize(rad_solar[i][1], [Param.stages,scenariosSolar]) 
             rad_solar[i][0] = inflowData[i][0] 
             rad_solar[i][1] = aux_resize_s  
     

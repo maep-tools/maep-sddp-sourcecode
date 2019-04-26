@@ -65,7 +65,11 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     dd_rationing = dict_data['rationingData']
     dd_emissions = dict_data['emissionsData']
     b_storageData = dict_data['b_storageData']
-    dict_wenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
+    
+    if Param.short_term is False:
+        dict_renenergy = pickle.load(open("savedata/average_save.p", "rb"))
+    else:
+        dict_renenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
 
     # data from dictionaries
     numBlocks = dict_format['numBlocks']
@@ -81,7 +85,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     #windData = dict_data['windData']
     smallData = dict_data['smallData']
     demandArea = dict_format['demandArea']
-    RnwArea = dict_wenergy['RnwArea']
+    RnwArea = dict_renenergy['RnwArea']
     
     circuits = dict_data['linesData']
     fcircuits = list(range(1, len(circuits)+1))
@@ -186,7 +190,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
     # inflows for each stage
     model.inflows = pyomo.Param(model.Hydro, mutable=True)
     # wind inflows for each stage
-    model.meanWind = pyomo.Param(model.Areas, model.Blocks, mutable=True)
+    model.meanRen = pyomo.Param(model.Areas, model.Blocks, mutable=True)
     # production factor for each hydro plant
     model.factorH = pyomo.Param(model.Hydro, mutable=True)
     # production cost (CxC) for each hydro plant
@@ -436,7 +440,7 @@ def data(Param, fcf_backward, sol_vol, iteration, sol_lvl, stochastic):
             
             # Solver module (Single core or parallel)
             objective_list, duals_batt, duals, total_obj = solver_module(Param, i,dict_data,
-            dict_format,model,opt,SolverFactory,SolverManagerFactory,dict_wenergy)
+            dict_format,model,opt,SolverFactory,SolverManagerFactory,dict_renenergy)
             
             # progress analysis
             bar.update(count+1); count += 1
