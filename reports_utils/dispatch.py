@@ -43,7 +43,7 @@ def gendispatch(Param):
                     val_scn += genRnFinal[j][z][i]
                 y0_org.append(val_scn/scenarios)     
         else:
-            if Param.dist_f[0] is True:
+            if Param.dist_f[0] is True or Param.dist_f[1] is True:
                 y0_org = []
                 for j in range(stages):
                     val_scn = 0

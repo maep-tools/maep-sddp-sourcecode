@@ -18,11 +18,13 @@ def data(confidence, Param, iteration, fcf_Operator):
     import pickle
 
     # Cost-to-go function
-    if fcf_Operator is True:
-        dict_fcf = pickle.load(open("savedata/fcfdataIter.p", "rb"))
-    else:
+    if fcf_Operator is False:
         dict_fcf = pickle.load(open("savedata/fcfdata.p", "rb"))
-    fcf_backward = dict_fcf['fcf_backward']
+        fcf_backward = dict_fcf['fcf_backward']
+        iteration = len(fcf_backward[1])-1
+    else:
+        dict_fcf = pickle.load(open("savedata/fcfdataIter.p", "rb"))
+        fcf_backward = dict_fcf['fcf_backward']
         
     # progress analysis
     bar = progressbar.ProgressBar(max_value = Param.seriesForw*Param.stages, \
@@ -47,11 +49,6 @@ def data(confidence, Param, iteration, fcf_Operator):
     dd_emissions = dict_data['emissionsData']
     b_storageData = dict_data['b_storageData']
 
-    if Param.short_term is False:
-        dict_renenergy = pickle.load(open("savedata/average_save.p", "rb"))
-    else:
-        dict_renenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
-        
     # data from dictionaries
     numAreas = dict_data['numAreas']
     numBlocks = dict_format['numBlocks']
@@ -64,7 +61,6 @@ def data(confidence, Param, iteration, fcf_Operator):
     volData = dict_data['volData']
     thermalData = dict_data['thermalData']
     demandArea = dict_format['demandArea']
-    rnwArea = dict_renenergy['RnwArea']
     
     circuits = dict_data['linesData']
     fcircuits = list(range(1, len(circuits)+1))
@@ -96,12 +92,42 @@ def data(confidence, Param, iteration, fcf_Operator):
     #opt = solver.cbc_solver(SolverFactory)
     #opt = solver.xpress_solver(SolverFactory)
     
-        # Define abstract model
+    # Define abstract model
     model = pyomo.ConcreteModel()
 
-    # SETS
+    # set of areas in the system
+    model.Areas = pyomo.Set(initialize=list(range(1, numAreas+1)))
     # set of demand blocks
     model.Blocks = pyomo.Set(initialize=list(range(1, numBlocks+1)))
+    # renewables format
+    if Param.short_term is False:
+        dict_renenergy = pickle.load(open("savedata/average_save.p", "rb"))
+        df_renenergy = dict_renenergy['average_vec']
+        rnwArea = dict_renenergy['RnwArea'] 
+        # model ren areas
+        model.AreasRnw = pyomo.Set(initialize= rnwArea)
+        model.meanRen = pyomo.Param(model.Areas, model.Blocks, mutable=True)
+    else:
+        if Param.dist_f[0] is True:
+            df_renenergy = pickle.load(open("savedata/pleps_save.p", "rb"))
+            rnwArea = []
+        elif Param.dist_f[1] is True:
+            dict_renenergy = pickle.load(open("savedata/average_mve_save.p", "rb"))
+            df_renenergy = dict_renenergy['average_mve_vec']
+            rnwArea = dict_renenergy['RnwArea']
+            # model ren areas
+            model.AreasRnw = pyomo.Set(initialize= rnwArea)
+            model.meanRen = pyomo.Param(model.Areas, model.Blocks, mutable=True)
+        elif Param.wind_aprox is True:
+            dict_renenergy = pickle.load(open("savedata/windspeed_save.p", "rb"))
+            df_renenergy = dict_renenergy['windenergy_area']
+            rnwArea = dict_renenergy['RnwArea']
+            # model ren areas
+            model.AreasRnw = pyomo.Set(initialize= rnwArea)
+            # bounds (min and max) on wind area generation
+            model.maxGenW = pyomo.Param(model.Areas, model.Blocks, mutable=True)
+        
+    # SETS
     # set of state/cut
     model.Cuts = pyomo.Set(initialize= list(range(1, iteration+2)))
     #model.Cuts = pyomo.Set(initialize=[1])
@@ -120,13 +146,11 @@ def data(confidence, Param, iteration, fcf_Operator):
     # set of thermal plants
     model.Small = pyomo.Set(initialize=smallPlants)
     # set of wind farms
-    model.Wind = pyomo.Set(initialize=dict_data['windPlants'])
+    # model.Wind = pyomo.Set(initialize=dict_data['windPlants'])
     # set of battery units
     model.Batteries = pyomo.Set(initialize=batteries)
-    # set of areas in the system
-    model.Areas = pyomo.Set(initialize=list(range(1, numAreas+1)))
+    # areas with load
     model.AreasDmd = pyomo.Set(initialize= demandArea)
-    model.AreasRnw = pyomo.Set(initialize= rnwArea)
     # set of lines in the system
     model.Circuits = pyomo.Set(initialize= fcircuits)
     
@@ -187,8 +211,6 @@ def data(confidence, Param, iteration, fcf_Operator):
     model.demand = pyomo.Param(model.Areas, model.Blocks, mutable=True)
     # inflows for each stage
     model.inflows = pyomo.Param(model.Hydro, mutable=True)
-    # wind inflows for each stage
-    model.meanRen = pyomo.Param(model.Areas, model.Blocks, mutable=True)
     # production factor for each hydro plant
     model.factorH = pyomo.Param(model.Hydro, mutable=True)
     # Hydro plants by area
@@ -225,8 +247,6 @@ def data(confidence, Param, iteration, fcf_Operator):
     # bounds (min and max) on batteries generation
     #model.minGenB = pyomo.Param(model.Batteries, model.Blocks, mutable=True)
     model.maxGenB = pyomo.Param(model.Batteries, model.Blocks, mutable=True)
-    # bounds (min and max) on wind area generation
-    model.maxGenW = pyomo.Param(model.Areas, model.Blocks, mutable=True)
     # bounds (min and max) on capacity of reservoirs
     dictplant = {hydroPlants[z]: dict_hydro['volmin'][z] for z in range(len(hydroPlants))}
     model.minVolH = pyomo.Param(model.Hydro, initialize=dictplant)
@@ -241,7 +261,7 @@ def data(confidence, Param, iteration, fcf_Operator):
     ###########################################################################
     
     # Bounds and DECISION VARIABLES
-    variables(model, pyomo)
+    variables(Param, model, pyomo)
     
     ###########################################################################
     
@@ -263,22 +283,6 @@ def data(confidence, Param, iteration, fcf_Operator):
         # p_efficient points
         model.plep = pyomo.Param(model.Areas, model.Blocks, model.plepNum, mutable=True)
     
-    if Param.dist_f[1] is True:
-        
-        dict_pleps = pickle.load(open("savedata/pleps_save.p", "rb"))
-        residual = dict_pleps['p_points']
-        
-        numPleps = dict_pleps['plepcount']
-        model.plepNum = pyomo.Set(initialize= list(range(1, numPleps+1)))
-        
-        # coeficient pleps variables
-        model.factorPlep = pyomo.Var(model.Areas, model.Blocks, model.plepNum, domain=pyomo.NonNegativeReals)
-        # aggregated renewables production
-        model.RnwLoad = pyomo.Var(model.Areas, model.Blocks)
-        
-        # p_efficient points
-        model.plep = pyomo.Param(model.Areas, model.Blocks, model.plepNum, mutable=True)
-        
     if Param.param_opf is True:
         dict_intensity = pickle.load(open("savedata/matrixbeta_save.p", "rb"))
         
@@ -404,7 +408,7 @@ def data(confidence, Param, iteration, fcf_Operator):
                 # wind energy
                 for z in lenblk:
                     for y in range(numAreas):
-                        model.meanRen[y+1,z+1] = dict_renenergy['average_vec'][y][s][k][z]
+                        model.meanRen[y+1,z+1] = df_renenergy[y][s][k][z]
             else:
                 if Param.dist_f[0] is True:
                     # update rationing cost and demand values by stage
@@ -412,22 +416,17 @@ def data(confidence, Param, iteration, fcf_Operator):
                         for y in lenblk:
                             for plp in range(numPleps):
                                 model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
-                elif Param.dist_f[1] is True:
-                    # update rationing cost and demand values by stage
-                    for area1 in range(numAreas):
-                        for y in lenblk:
-                            for plp in range(numPleps):
-                                model.plep[area1+1, y+1, plp+1] = residual[s][k][area1][y][plp]
-                elif Param.wind_aprox is True:
+                else:
                     # wind energy
                     for z in lenblk:
                         for y in range(numAreas):
-                            model.meanRen[y+1,z+1] = dict_renenergy['windenergy_area'][y][s][k][z]
+                            model.meanRen[y+1,z+1] = df_renenergy[y][s][k][z]
 
             for z in lenblk:
                 for y in range(numAreas):
                     model.demand[y+1,z+1] = df_demand[y][s][z]
-                    model.maxGenW[y+1,z+1] = dict_wind['hat_area'][y][s]*blocksData[0][z]
+                    if Param.wind_aprox is True:
+                        model.maxGenW[y+1,z+1] = dict_wind['hat_area'][y][s]*blocksData[0][z]
                         
             # Update the generation cost
             for i, plant in enumerate(thermalPlants):

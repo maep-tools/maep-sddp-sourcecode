@@ -24,9 +24,9 @@ file = '01_example_hydrothermal'       # input file name (DataSystem location)
 
 class Param:
     
-    max_iter = 3              # Maximun number of iterations
-    bnd_stages = 2            # Boundary stages
-    stages = 10 + bnd_stages  # planning horizon: (months + bundary months)
+    max_iter = 4              # Maximun number of iterations
+    bnd_stages = 4            # Boundary stages
+    stages = 6 + bnd_stages  # planning horizon: (months + bundary months)
     seriesBack = 1            # scenarios for the backward phase
     seriesForw = 1            # scenarios the forward phase
     
@@ -54,7 +54,7 @@ class Param:
     # Short-term models
     # Dist-free: [P-efficient points, MVE method]
     dist_f = [False,False]        # Free distribution model (NO portfolio operation)
-    dist_samples = 6             # sample for p-efficient points calculation
+    dist_samples = 18             # sample for p-efficient points calculation
     # renewables additional models (ONLY for wind power integration)
     wind_aprox = False            # Distribution form assupmtions
     wind_model2 = False          # Second model of wind plants (inconcluse)
@@ -66,6 +66,7 @@ class Param:
     emissions = False         # ObjectiveFunction - emissions costs
     emss_curve = False        # emissions curve calculation 
     thermal_co2 = [1, 1]      # Emission factor type selection [tech:Ton/Mwh, Fuel:MBTU/MWh]  
+    ccs_tech = False          # Carbon capture and storage technology
     
     # operation model options
     policy = True            # algorithm: backward and forward 

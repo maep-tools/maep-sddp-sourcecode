@@ -612,7 +612,7 @@ def xlsfile(Param):
         
             ws3['B3'] = 'block'; ws3['A3'] = 'Stage'
             
-        elif Param.wind_model2 is False:
+        elif Param.dist_f[0] is True or Param.dist_f[1] is True: 
             
             ws10_4 = wb.create_sheet(title="RnwsGen")
         

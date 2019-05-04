@@ -1,5 +1,5 @@
 
-def variables(model, pyomo):
+def variables(Param, model, pyomo):
     
     # reservoirs limits
     def boundVolH(model, h):
@@ -21,9 +21,6 @@ def variables(model, pyomo):
     # batteries production
     def boundProdB(model, r, b):
         return (0, model.maxGenB[r, b])
-    # wind area production
-    def boundProdW(model, a, b):
-        return (0, model.maxGenW[a, b])
     # lines limits
     def boundLines(model, l, b):
         return (-model.lineLimit[l, b], model.lineLimit[l, b])
@@ -38,10 +35,6 @@ def variables(model, pyomo):
     model.prodS = pyomo.Var(model.Small, model.Blocks, bounds=boundProdS)
     # hydro production
     model.prodH = pyomo.Var(model.Hydro, model.Blocks, bounds=boundProdH)
-    # wind power production
-    model.prodW = pyomo.Var(model.AreasRnw, model.Blocks, bounds=boundProdW)
-    # renewables production
-    model.prodR = pyomo.Var(model.AreasRnw, model.Blocks, domain=pyomo.NonNegativeReals)
     # Battery production
     model.prodB = pyomo.Var(model.Batteries, model.Blocks, bounds=boundProdB)
     # battery charge
@@ -67,6 +60,18 @@ def variables(model, pyomo):
     # limit of storage at each block
     model.lvlBlk = pyomo.Var(model.Batteries, model.Blocks, bounds=boundlvlBlock)
     
+    # renewables data
+    if Param.short_term is False:
+        # renewables production
+        model.prodR = pyomo.Var(model.AreasRnw, model.Blocks, domain=pyomo.NonNegativeReals)
+    else:
+        if Param.wind_aprox is True:
+            # wind area production
+            def boundProdW(model, a, b):
+                return (0, model.maxGenW[a, b])
+    
+            # wind power production
+            model.prodW = pyomo.Var(model.AreasRnw, model.Blocks, bounds=boundProdW)
 
 def obj_function(Param, model, pyomo):
     
@@ -84,23 +89,7 @@ def obj_function(Param, model, pyomo):
         
     else:
         
-        if Param.dist_free is True:
-                
-            # Consideration of CO2 emissions
-            def obj_expr(model):
-                return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
-                        sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
-                        sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
-                        model.futureCost +
-                        # emissions
-                        model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
-                        sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
-                        sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks) ) )
-            # Objective function
-            model.OBJ = pyomo.Objective(rule=obj_expr)
-        
-        else:
-            
+        if Param.short_term is False:
             # Consideration of CO2 emissions
             def obj_expr(model):
                 return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
@@ -111,11 +100,60 @@ def obj_function(Param, model, pyomo):
                         model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
                         sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
                         sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks)
-                        # sum(( model.windFE[a] * model.prodW[a, b]) for a in model.Areas for b in model.Blocks) 
-                        # SOLAR AND WIND EMISSIONS TO BE IMPLEMENTED
+                        # rennewables' emissions
                         ) )
             # Objective function
             model.OBJ = pyomo.Objective(rule=obj_expr)
+                
+        else:
+            if Param.dist_free[0] is True:
+                
+                # Consideration of CO2 emissions
+                def obj_expr(model):
+                    return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
+                            sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
+                            model.futureCost +
+                            # emissions
+                            model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
+                            sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks) 
+                            # rennewables' emissions
+                            ) )
+                # Objective function
+                model.OBJ = pyomo.Objective(rule=obj_expr)
+            
+            elif Param.dist_f[1] is True:
+                # Consideration of CO2 emissions
+                def obj_expr(model):
+                    return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
+                            sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
+                            model.futureCost +
+                            # emissions
+                            model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
+                            sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks)
+                            # rennewables' emissions
+                            ) )
+                # Objective function
+                model.OBJ = pyomo.Objective(rule=obj_expr)
+            
+            elif Param.wind_aprox is True:
+                # Consideration of CO2 emissions
+                def obj_expr(model):
+                    return (sum((model.cost[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum((model.hydroCost[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) +
+                            sum((model.rationing[area] * model.deficit[area, b]) for area in model.AreasDmd for b in model.Blocks) +
+                            model.futureCost +
+                            # emissions
+                            model.co2cost * ( sum(( model.hydroFE[h] * model.prodH[h, b]* model.factorH[h]) for h in model.Hydro for b in model.Blocks) + 
+                            sum(( model.thermalFE[t] * model.prodT[t, b]) for t in model.Thermal for b in model.Blocks) +
+                            sum(( model.smallFE[m] * model.prodS[m, b]) for m in model.Small for b in model.Blocks)
+                            # rennewables' emissions
+                            ) )
+                # Objective function
+                model.OBJ = pyomo.Objective(rule=obj_expr)
             
 def load_balance(Param, model, pyomo):
     
@@ -129,41 +167,64 @@ def load_balance(Param, model, pyomo):
         # with power flow
         if Param.param_opf is True:
             
-            if Param.dist_free is True:
+            if Param.short_term is False:
             
                 def ctDemand(model, area, b):
                     return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
                             sum(model.prodS[m, b] for m in model.SmallArea[area]) +
                             sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            model.balance[area,b] + model.deficit[area, b] >= model.RnwLoad[area, b] )
+                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                            sum(model.prodR[a, b] for a in model.AreasRnw if a == area ) + 
+                            model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
                 # add constraint to model according to indices
                 model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
                 
-                def ctRnwLoad(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
-                            model.RnwLoad[area, b] )
-                # add constraint to model according to indices
-                model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
-                
-                def ctPlep(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
-                # add constraint to model according to indices
-                model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
-            
             else:
+                if Param.dist_f[0] is True:
+            
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                model.balance[area,b] + model.deficit[area, b] >= model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
                 
-                def ctDemand(model, area, b):
-                    return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
-                            sum(model.prodS[m, b] for m in model.SmallArea[area]) +
-                            sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
-                            model.balance[area,b] + model.deficit[area, b] >= 
-                            model.demand[area, b])
-                # add constraint to model according to indices
-                model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-        
+                    def ctRnwLoad(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
+                                model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
+                    
+                    def ctPlep(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
+                    # add constraint to model according to indices
+                    model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
+
+                elif Param.dist_f[1] is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                model.balance[area,b] + model.deficit[area, b] >= model.meanRen[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
+                    
+                elif Param.wind_aprox is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
+                                model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)        
+                    
             # energy balace in nodes
             def ctBalance(model, area, b):
                 return (sum(model.line[l, b] for l in model.linesAreaOut[area]) - 
@@ -182,43 +243,71 @@ def load_balance(Param, model, pyomo):
         # NO power flow
         else:
             
-            if Param.dist_free is True:
-                
+            if Param.short_term is False:
+            
                 def ctDemand(model, area, b):
                     return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
                             sum(model.prodS[m, b] for m in model.SmallArea[area]) +
                             sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            sum(model.line[l, b] for l in model.linesAreaOut[area])-
-                            sum(model.line[l, b] for l in model.linesAreaIn[area]) +
-                            model.deficit[area, b] >= model.RnwLoad[area, b] )
-                # add constraint to model according to indices
-                model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-                
-                def ctRnwLoad(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
-                            model.RnwLoad[area, b] )
-                # add constraint to model according to indices
-                model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
-                
-                def ctPlep(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
-                # add constraint to model according to indices
-                model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
-        
-            else:
-                
-                def ctDemand(model, area, b):
-                    return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
-                            sum(model.prodS[m, b] for m in model.SmallArea[area]) +
-                            sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
+                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                            sum(model.prodR[a, b] for a in model.AreasRnw if a == area ) + 
                             sum(model.line[l, b] for l in model.linesAreaOut[area])-
                             sum(model.line[l, b] for l in model.linesAreaIn[area]) +
                             model.deficit[area, b] >= model.demand[area, b])
                 # add constraint to model according to indices
                 model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
+                
+            else:
+                if Param.dist_f[0] is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.line[l, b] for l in model.linesAreaOut[area])-
+                                sum(model.line[l, b] for l in model.linesAreaIn[area]) +
+                                model.deficit[area, b] >= model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
+                    
+                    def ctRnwLoad(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
+                                model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
+                    
+                    def ctPlep(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
+                    # add constraint to model according to indices
+                    model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
+                
+                elif Param.dist_f[1] is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.line[l, b] for l in model.linesAreaOut[area])-
+                                sum(model.line[l, b] for l in model.linesAreaIn[area]) +
+                                model.deficit[area, b] >= model.meanRen[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
+                    
+                elif Param.wind_aprox is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
+                                sum(model.line[l, b] for l in model.linesAreaOut[area])-
+                                sum(model.line[l, b] for l in model.linesAreaIn[area]) +
+                                model.deficit[area, b] >= model.demand[area, b])
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
     
     # NO storage-wind portfolio 
     else:
@@ -226,7 +315,7 @@ def load_balance(Param, model, pyomo):
         # with power flow
         if Param.param_opf is True:
             
-            if Param.dist_free is True:
+            if Param.short_term is False:
             
                 def ctDemand(model, area, b):
                     return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
@@ -234,35 +323,60 @@ def load_balance(Param, model, pyomo):
                             sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
                             sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
                             sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            model.balance[area,b] + model.deficit[area, b] >= model.RnwLoad[area, b] )
+                            sum(model.prodR[a, b] for a in model.AreasRnw if a == area ) + 
+                            model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
                 # add constraint to model according to indices
                 model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
                 
-                def ctRnwLoad(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
-                            model.RnwLoad[area, b] )
-                # add constraint to model according to indices
-                model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
-                
-                def ctPlep(model, area, b):
-                    return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
-                # add constraint to model according to indices
-                model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
-            
             else:
+                if Param.dist_f[0] is True:
+            
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
+                                model.balance[area,b] + model.deficit[area, b] >= model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
                 
-                def ctDemand(model, area, b):
-                    return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
-                            sum(model.prodS[m, b] for m in model.SmallArea[area]) +
-                            sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
-                            sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
-                            sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
-                            sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
-                            model.balance[area,b] + model.deficit[area, b] >= 
-                            model.demand[area, b])
-                # add constraint to model according to indices
-                model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-        
+                    def ctRnwLoad(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
+                                model.RnwLoad[area, b] )
+                    # add constraint to model according to indices
+                    model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
+                    
+                    def ctPlep(model, area, b):
+                        return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
+                    # add constraint to model according to indices
+                    model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
+
+                elif Param.dist_f[1] is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
+                                model.balance[area,b] + model.deficit[area, b] >= model.meanRen[area, b] )
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
+                    
+                elif Param.wind_aprox is True:
+                    
+                    def ctDemand(model, area, b):
+                        return (sum(model.prodT[t, b] for t in model.ThermalArea[area]) +
+                                sum(model.prodS[m, b] for m in model.SmallArea[area]) +
+                                sum(model.prodH[h, b]*model.factorH[h] for h in model.HydroArea[area]) +
+                                sum(model.prodB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) -
+                                sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
+                                sum(model.prodW[a, b] for a in model.AreasRnw if a == area ) + 
+                                model.balance[area,b] + model.deficit[area, b] >= model.demand[area, b])
+                    # add constraint to model according to indices
+                    model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)        
+                    
             # energy balace in nodes
             def ctBalance(model, area, b):
                 return (sum(model.line[l, b] for l in model.linesAreaOut[area]) - 
@@ -332,20 +446,9 @@ def load_balance(Param, model, pyomo):
                                 sum(model.chargeB[r, b] for r in model.Batteries if model.BatteriesArea[r] == area) +
                                 sum(model.line[l, b] for l in model.linesAreaOut[area])-
                                 sum(model.line[l, b] for l in model.linesAreaIn[area]) +
-                                model.deficit[area, b] >= model.RnwLoad[area, b] )
+                                model.deficit[area, b] >= model.meanRen[area, b] )
                     # add constraint to model according to indices
                     model.ctDemand = pyomo.Constraint(model.Areas, model.Blocks, rule=ctDemand)
-                    
-                    def ctRnwLoad(model, area, b):
-                        return( sum(model.factorPlep[area, b, p] * model.plep[area, b, p] for p in model.plepNum ) ==
-                                model.RnwLoad[area, b] )
-                    # add constraint to model according to indices
-                    model.ctRnwLoad = pyomo.Constraint(model.Areas, model.Blocks, rule=ctRnwLoad)
-                    
-                    def ctPlep(model, area, b):
-                        return( sum(model.factorPlep[area, b, p] for p in model.plepNum ) == 1 )
-                    # add constraint to model according to indices
-                    model.ctPlep = pyomo.Constraint(model.Areas, model.Blocks, rule=ctPlep)
                     
                 elif Param.wind_aprox is True:
                     

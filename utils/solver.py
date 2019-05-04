@@ -16,9 +16,9 @@ def gurobi_solver(SolverFactory):
     opt = SolverFactory('gurobi', solver_io='python')
     #opt = SolverFactory('gurobi', solver_io='direct')
     #opt.options['Threads'] = 4
-    #opt.options['symbolic_solver_labels'] = False
+    opt.options['symbolic_solver_labels'] = False
     opt.options['OutputFlag'] = 0
-#    opt.options['stream_solver'] = False
+    opt.options['stream_solver'] = False
     opt.options['keepfiles'] = False
     opt.options['LogFile'] = ''
     opt.options['LogToConsole'] = 0

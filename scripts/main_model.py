@@ -80,13 +80,13 @@ def parameters(Param):
                 
                 from utils.input_wind_DF import inputDFWind
                 from utils.input_solar_DF import inputDFSolarL, inputDFSolarD
-                from utils.residualload import aggr_energy
+                from utils.residualload import aggr_energy_mve
                 
-                print('p-Efficient Points calculation ...')
+                print('minimmum volume ellipsoide ...')
                 inputDFWind(dict_data, Param)
                 inputDFSolarL(dict_data, Param)
                 inputDFSolarD(dict_data, Param)
-                aggr_energy(dict_data, Param)
+                aggr_energy_mve(dict_data, Param)
                 
             elif Param.wind_aprox is True:
                 

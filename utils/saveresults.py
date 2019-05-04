@@ -15,8 +15,6 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
     for gen_T in [instance.prodT]: Tobject = getattr(instance, str(gen_T))
     for gen_S in [instance.prodS]: Sobject = getattr(instance, str(gen_S))
     for gen_H in [instance.prodH]: Hobject = getattr(instance, str(gen_H))
-    for gen_W in [instance.prodW]: Wobject = getattr(instance, str(gen_W))
-    for gen_R in [instance.prodR]: Robject = getattr(instance, str(gen_R))
     for spl_W in [instance.spillW]: sWobject = getattr(instance, str(spl_W))
     for gen_B in [instance.prodB]: Bobject = getattr(instance, str(gen_B))
     for gen_D in [instance.deficit]: Dobject = getattr(instance, str(gen_D))
@@ -41,6 +39,7 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
             spillHydro[k][s][i][j] = sHobject[plant, j+1].value
 
     if Param.short_term is False:
+        for gen_R in [instance.prodR]: Robject = getattr(instance, str(gen_R))
         for i in range(numAreas):
             for j in lenblk:
                 if i+1 in rnwArea:
@@ -49,14 +48,19 @@ def saveiter(k,s,lenblk,thermalPlants,instance,genThermal,hydroPlants,batteries,
                     genRnws[k][s][i][j] = 0
     else:    
         if Param.dist_f[0] is True:
-            
             for gen_Rn in [instance.RnwLoad]: Rnobject = getattr(instance, str(gen_Rn))
+            for i in range(numAreas):
+                for j in lenblk:
+                    genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
         
+        elif Param.dist_f[1] is True:
+            for gen_Rn in [instance.meanRen]: Rnobject = getattr(instance, str(gen_Rn))
             for i in range(numAreas):
                 for j in lenblk:
                     genRnws[k][s][i][j] = Rnobject[i+1, j+1].value
         
         elif Param.wind_aprox is True:
+            for gen_W in [instance.prodW]: Wobject = getattr(instance, str(gen_W))
             for i in range(numAreas):
                 for j in lenblk:
                     if i+1 in rnwArea:
